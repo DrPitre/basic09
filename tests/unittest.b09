@@ -895,11 +895,11 @@ failed:=failed+1
 ENDIF
 
 n:=FIX(3.7)
-IF n=3 THEN
+IF n=4 THEN
 PRINT "PASS fix"
 passed:=passed+1
 ELSE
-PRINT "FAIL fix: expected 3 got ";n
+PRINT "FAIL fix: expected 4 got ";n
 failed:=failed+1
 ENDIF
 

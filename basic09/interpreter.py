@@ -72,7 +72,7 @@ class _Gosub(_Goto):
 _BUILTINS: dict[str, Any] = {
     "ABS":    lambda a: B9Value.real(abs(a.as_float())) if a.tag == TypeTag.REAL else B9Value.integer(abs(a.as_int())),
     "INT":    lambda a: B9Value.integer(int(a.as_float())),
-    "FIX":    lambda a: B9Value.integer(int(a.as_float())),
+    "FIX":    lambda a: B9Value.integer(round(a.as_float())),
     "FLOAT":  lambda a: B9Value.real(float(a.as_float())),
     "SQR":    lambda a: B9Value.real(math.sqrt(a.as_float())),
     "SIN":    lambda a: B9Value.real(math.sin(a.as_float())),
