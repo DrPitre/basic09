@@ -971,7 +971,7 @@ ENDIF
 
 END
 
-PROCEDURE runTests
+PROCEDURE unittest
 DIM passed,failed:INTEGER
 
 passed:=0

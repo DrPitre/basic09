@@ -54,13 +54,13 @@ def b09_interp():
 
 @pytest.fixture(scope="session")
 def b09_results(b09_interp):
-    """Run runTests and return a dict of {test_label: 'PASS'|'FAIL: ...'}.
+    """Run unittest and return a dict of {test_label: 'PASS'|'FAIL: ...'}.
 
     Each PASS/FAIL line from the BASIC09 output maps the label to its status.
     """
     buf = StringIO()
     with redirect_stdout(buf):
-        b09_interp.run_procedure("runTests")
+        b09_interp.run_procedure("unittest")
     results = {}
     for line in buf.getvalue().splitlines():
         if line.startswith("PASS "):
