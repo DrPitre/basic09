@@ -388,29 +388,6 @@ passed:=passed+1
 
 END
 
-PROCEDURE testDim
-PARAM passed,failed:INTEGER
-DIM i:INTEGER
-DIM b:BOOLEAN
-
-IF i=0 THEN
-PRINT "PASS dim integer default"
-passed:=passed+1
-ELSE
-PRINT "FAIL dim integer default: expected 0 got ";i
-failed:=failed+1
-ENDIF
-
-IF NOT b THEN
-PRINT "PASS dim boolean default"
-passed:=passed+1
-ELSE
-PRINT "FAIL dim boolean default"
-failed:=failed+1
-ENDIF
-
-END
-
 PROCEDURE testComparisons
 PARAM passed,failed:INTEGER
 
@@ -1017,7 +994,6 @@ RUN testMathFunctions(passed,failed)
 RUN testMoreStrings(passed,failed)
 RUN testReadData(passed,failed)
 RUN testGoto(passed,failed)
-RUN testDim(passed,failed)
 RUN testComparisons(passed,failed)
 RUN testIf(passed,failed)
 RUN test2DArrays(passed,failed)

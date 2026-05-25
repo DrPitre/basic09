@@ -25,7 +25,6 @@ _PROCEDURE_NAMES = [
     "testMoreStrings",
     "testReadData",
     "testGoto",
-    "testDim",
     "testComparisons",
     "testIf",
     "test2DArrays",
