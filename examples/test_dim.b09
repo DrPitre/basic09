@@ -1,0 +1,39 @@
+// test_dim.b09
+
+DIM I:INTEGER
+DIM R:REAL
+DIM S:STRING
+DIM B:BOOLEAN
+
+I = 42
+IF I = 42 THEN PRINT "PASS: integer assign"
+IF I <> 42 THEN PRINT "FAIL: integer assign"
+
+R = 3.14
+IF R = 3.14 THEN PRINT "PASS: real assign"
+IF R <> 3.14 THEN PRINT "FAIL: real assign"
+
+S = "hi"
+IF S = "hi" THEN PRINT "PASS: string assign"
+IF S <> "hi" THEN PRINT "FAIL: string assign"
+
+B = TRUE
+IF B THEN PRINT "PASS: boolean true"
+IF NOT B THEN PRINT "FAIL: boolean true"
+
+B = FALSE
+IF NOT B THEN PRINT "PASS: boolean false"
+IF B THEN PRINT "FAIL: boolean false"
+
+DIM J:INTEGER
+IF J = 0 THEN PRINT "PASS: integer default zero"
+IF J <> 0 THEN PRINT "FAIL: integer default zero"
+
+DIM T:STRING
+IF T = "" THEN PRINT "PASS: string default empty"
+IF T <> "" THEN PRINT "FAIL: string default empty"
+
+DIM X:REAL
+X = 3
+IF X = 3 THEN PRINT "PASS: integer to real coercion"
+IF X <> 3 THEN PRINT "FAIL: integer to real coercion"

@@ -1,0 +1,31 @@
+// test_if.b09
+
+IF 1 = 1 THEN
+  PRINT "PASS: if true"
+ENIF
+
+IF 1 = 2 THEN
+  PRINT "FAIL: if false should not print"
+ENIF
+
+IF 1 = 1 THEN
+  PRINT "PASS: if/else true branch"
+ELSE
+  PRINT "FAIL: if/else true branch"
+ENIF
+
+IF 1 = 2 THEN
+  PRINT "FAIL: if/else false branch"
+ELSE
+  PRINT "PASS: if/else false branch"
+ENIF
+
+IF TRUE THEN
+  IF FALSE THEN
+    PRINT "FAIL: nested if"
+  ELSE
+    PRINT "PASS: nested if"
+  ENIF
+ENIF
+
+IF 1 = 1 THEN PRINT "PASS: single line if"

@@ -1,0 +1,201 @@
+// Basic09 Grammar
+
+program: statement_list
+
+statement_list: NEWLINE* (statement NEWLINE+)* statement?
+
+statement: dim_stmt
+         | type_stmt
+         | param_stmt
+         | let_stmt
+         | print_stmt
+         | input_stmt
+         | if_stmt
+         | for_stmt
+         | while_stmt
+         | repeat_stmt
+         | loop_stmt
+         | exit_stmt
+         | exitif_stmt
+         | run_stmt
+         | procedure_stmt
+         | return_stmt
+         | end_stmt
+         | goto_stmt
+         | gosub_stmt
+         | on_goto_stmt
+         | read_stmt
+         | data_stmt
+         | restore_stmt
+         | deg_stmt
+         | rad_stmt
+         | base_stmt
+         | label_stmt
+         | expr_stmt
+
+// Declarations
+dim_stmt: "DIM" dim_var ("," dim_var)* ":" type_spec
+dim_var: IDENT
+       | IDENT "(" expr_list ")"
+
+// TYPE record declaration
+type_stmt: "TYPE" IDENT "=" type_field (";" type_field)*
+type_field: IDENT ":" type_spec
+
+// PARAM (procedure parameter declaration — BASIC09 style)
+param_stmt: "PARAM" IDENT ("," IDENT)* ":" type_spec
+
+type_spec: "INTEGER"                   -> type_integer
+         | "REAL"                      -> type_real
+         | "STRING" ("[" INT_LIT "]")? -> type_string
+         | "BOOLEAN"                   -> type_boolean
+         | "BYTE"                      -> type_byte
+         | IDENT                       -> type_user
+
+// Assignment
+let_stmt: var ":=" expr
+
+// Print
+print_stmt: "PRINT" print_args?
+print_args: print_item ("," print_item | ";" print_item)*
+print_item: expr | TAB "(" expr ")"
+
+// Input
+input_stmt: "INPUT" (STRING_LIT ";")? var_list
+var_list: var ("," var)*
+
+// IF
+if_stmt: "IF" expr "THEN" NEWLINE statement_list "ENDIF"
+       | "IF" expr "THEN" NEWLINE statement_list "ELSE" NEWLINE statement_list "ENDIF"
+       | "IF" expr "THEN" statement
+
+// FOR
+for_stmt: "FOR" IDENT ":=" expr "TO" expr ("STEP" expr)? NEWLINE statement_list "NEXT" IDENT?
+// REPEAT/UNTIL
+repeat_stmt: "REPEAT" NEWLINE statement_list "UNTIL" expr
+
+// LOOP/ENDLOOP (infinite, use EXIT or EXITIF to break)
+loop_stmt: "LOOP" NEWLINE statement_list "ENDLOOP"
+
+// WHILE/DO/ENDWHILE
+while_stmt: "WHILE" expr "DO" NEWLINE statement_list "ENDWHILE"
+
+// EXIT — unconditional break from innermost FOR/REPEAT/LOOP
+exit_stmt: "EXIT"
+
+// EXITIF — conditional break with optional body run before leaving
+exitif_stmt: "EXITIF" expr "THEN" NEWLINE statement_list "ENDEXIT"
+
+// Procedure call
+run_stmt: "RUN" IDENT ("(" expr_list? ")")?
+
+// Procedure definition
+procedure_stmt: "PROCEDURE" IDENT ("(" param_list? ")")? NEWLINE statement_list "END"
+
+param_list: param ("," param)*
+param: IDENT ":" type_spec
+
+// RETURN / END
+return_stmt: "RETURN"
+end_stmt: "END"
+
+// GOTO / GOSUB — targets can be named labels or line numbers
+goto_target: IDENT | INT_LIT
+goto_stmt: "GOTO" goto_target
+gosub_stmt: "GOSUB" goto_target
+on_goto_stmt: "ON" expr "GOTO" goto_target ("," goto_target)*
+
+// DATA
+read_stmt: "READ" var_list
+data_stmt: "DATA" literal ("," literal)*
+restore_stmt: "RESTORE"
+
+// DEG/RAD — set trigonometric degree/radian mode
+deg_stmt: "DEG"
+rad_stmt: "RAD"
+
+// BASE — set array base index (0 or 1)
+base_stmt: "BASE" INT_LIT
+
+// Label
+label_stmt: IDENT ":"
+
+// Expression statement (bare procedure call or function call)
+expr_stmt: expr
+
+// Variables — dot notation for record fields
+var: IDENT ("." IDENT)? array_index?
+array_index: "(" expr_list ")"
+
+// Expressions
+?expr: or_expr
+
+?or_expr: and_expr
+        | or_expr "OR" and_expr   -> or_op
+        | or_expr "XOR" and_expr  -> xor_op
+
+?and_expr: not_expr
+         | and_expr "AND" not_expr -> and_op
+
+?not_expr: "NOT" not_expr          -> not_op
+         | cmp_expr
+
+?cmp_expr: add_expr
+         | cmp_expr "="  add_expr  -> eq_op
+         | cmp_expr "<>" add_expr  -> ne_op
+         | cmp_expr "<"  add_expr  -> lt_op
+         | cmp_expr "<=" add_expr  -> le_op
+         | cmp_expr ">"  add_expr  -> gt_op
+         | cmp_expr ">=" add_expr  -> ge_op
+
+?add_expr: mul_expr
+         | add_expr "+" mul_expr   -> add_op
+         | add_expr "-" mul_expr   -> sub_op
+
+?mul_expr: unary_expr
+         | mul_expr "*" unary_expr -> mul_op
+         | mul_expr "/" unary_expr -> div_op
+         | mul_expr "DIV" unary_expr -> idiv_op
+
+?unary_expr: "-" unary_expr        -> neg_op
+           | "+" unary_expr
+           | power_expr
+
+?power_expr: primary "^" unary_expr -> pow_op
+           | primary
+
+?primary: literal
+        | var
+        | func_call
+        | "(" expr ")"
+
+func_call: IDENT "(" expr_list? ")"
+
+expr_list: expr ("," expr)*
+
+// Literals
+literal: INT_LIT     -> int_lit
+       | FLOAT_LIT   -> float_lit
+       | STRING_LIT  -> string_lit
+       | "TRUE"      -> true_lit
+       | FALSE_KW    -> false_lit
+       | "PI"        -> pi_lit
+
+FALSE_KW: "FALSE"
+TAB: "TAB"
+
+// Terminals
+// Require digit before decimal point to avoid ambiguity with INT_LIT + orphan .N
+INT_LIT: /[0-9]+/
+FLOAT_LIT: /[0-9]+\.[0-9]+([eE][+-]?[0-9]+)?/ | /\.[0-9]+([eE][+-]?[0-9]+)?/ | /[0-9]+[eE][+-]?[0-9]+/
+STRING_LIT: /\"[^\"]*\"/
+// $ suffix allowed so CHR$, LEFT$, STR$ etc. parse as identifiers
+// Negative lookahead prevents keywords from matching as identifiers
+IDENT: /(?!(DIM|TYPE|FOR|NEXT|IF|THEN|ELSE|ENDIF|EXITIF|ENDEXIT|EXIT|REPEAT|UNTIL|LOOP|ENDLOOP|WHILE|DO|ENDWHILE|RUN|PROCEDURE|PARAM|RETURN|END|GOTO|GOSUB|ON|READ|DATA|RESTORE|REM|PRINT|INPUT|STEP|TO|AND|OR|XOR|NOT|DIV|TRUE|FALSE|PI|INTEGER|REAL|STRING|BOOLEAN|BYTE|DEG|RAD|BASE)\b)[A-Za-z][A-Za-z0-9_]*\$?/
+
+NEWLINE: /\r?\n/
+WS: /[ \t]+/
+BLOCK_COMMENT: /\(\*[^*]*\*\)/
+
+%ignore WS
+%ignore BLOCK_COMMENT

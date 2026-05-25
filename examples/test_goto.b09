@@ -1,0 +1,21 @@
+// test_goto.b09
+
+// GOTO skips a statement
+GOTO SKIP
+PRINT "FAIL: goto should have skipped this"
+SKIP:
+PRINT "PASS: goto"
+
+// ON...GOTO
+DIM I:INTEGER
+I = 2
+ON I GOTO L1, L2, L3
+L1:
+PRINT "FAIL: on goto wrong branch"
+GOTO DONE
+L2:
+PRINT "PASS: on goto"
+GOTO DONE
+L3:
+PRINT "FAIL: on goto wrong branch"
+DONE:

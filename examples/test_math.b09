@@ -1,0 +1,28 @@
+// test_math.b09
+
+IF ABS(5) = 5 THEN PRINT "PASS: ABS positive"
+IF ABS(5) <> 5 THEN PRINT "FAIL: ABS positive"
+
+IF ABS(-5) = 5 THEN PRINT "PASS: ABS negative"
+IF ABS(-5) <> 5 THEN PRINT "FAIL: ABS negative"
+
+IF INT(3.9) = 3 THEN PRINT "PASS: INT truncate"
+IF INT(3.9) <> 3 THEN PRINT "FAIL: INT truncate"
+
+IF SQR(9.0) = 3 THEN PRINT "PASS: SQR"
+IF SQR(9.0) <> 3 THEN PRINT "FAIL: SQR"
+
+IF SIN(0) = 0 THEN PRINT "PASS: SIN zero"
+IF SIN(0) <> 0 THEN PRINT "FAIL: SIN zero"
+
+IF COS(0) = 1 THEN PRINT "PASS: COS zero"
+IF COS(0) <> 1 THEN PRINT "FAIL: COS zero"
+
+IF SGN(5) = 1 THEN PRINT "PASS: SGN positive"
+IF SGN(5) <> 1 THEN PRINT "FAIL: SGN positive"
+
+IF SGN(-5) = -1 THEN PRINT "PASS: SGN negative"
+IF SGN(-5) <> -1 THEN PRINT "FAIL: SGN negative"
+
+IF SGN(0) = 0 THEN PRINT "PASS: SGN zero"
+IF SGN(0) <> 0 THEN PRINT "FAIL: SGN zero"

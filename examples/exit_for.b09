@@ -1,0 +1,13 @@
+// exit_for.b09 - EXIT IF from FOR loop
+
+DIM I:INTEGER
+
+FOR I = 1 TO 100
+  EXIT IF I = 4
+NEXT I
+
+IF I = 4 THEN
+  PRINT "PASS: EXIT IF from FOR"
+ELSE
+  PRINT "FAIL: EXIT IF from FOR, I=" + STR$(I)
+ENIF
