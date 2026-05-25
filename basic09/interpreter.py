@@ -95,10 +95,8 @@ _BUILTINS: dict[str, Any] = {
     "MID$":   lambda a, b, *rest: B9Value.string(
         a.as_str()[b.as_int()-1 : b.as_int()-1 + (rest[0].as_int() if rest else len(a.as_str()))]
     ),
-    "SUBSTR$":lambda a, b, *rest: B9Value.string(
-        a.as_str()[b.as_int()-1 : b.as_int()-1 + (rest[0].as_int() if rest else len(a.as_str()))]
-    ),
-    "INSTR":  lambda a, b: B9Value.integer(b.as_str().find(a.as_str()) + 1),
+    "MOD":    lambda a, b: B9Value.integer(a.as_int() % b.as_int()),
+    "SUBSTR": lambda a, b: B9Value.integer(b.as_str().find(a.as_str()) + 1 if a.as_str() in b.as_str() else 0),
     "MOD":    lambda a, b: B9Value.integer(a.as_int() % b.as_int()),
     "LAND":   lambda a, b: B9Value.integer(a.as_int() & b.as_int()),
     "LOR":    lambda a, b: B9Value.integer(a.as_int() | b.as_int()),

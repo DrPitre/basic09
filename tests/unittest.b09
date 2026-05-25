@@ -967,22 +967,28 @@ END
 
 PROCEDURE testSubstr
 PARAM passed,failed:INTEGER
-DIM s:STRING[20]
 
-s:="BASIC09"
-IF SUBSTR$(s,1,5)="BASIC" THEN
-PRINT "PASS substr$ start"
+IF SUBSTR("worth","Fortworth")=5 THEN
+PRINT "PASS substr found"
 passed:=passed+1
 ELSE
-PRINT "FAIL substr$ start"
+PRINT "FAIL substr found: expected 5 got ";SUBSTR("worth","Fortworth")
 failed:=failed+1
 ENDIF
 
-IF SUBSTR$(s,6,2)="09" THEN
-PRINT "PASS substr$ end"
+IF SUBSTR("xyz","Fortworth")=0 THEN
+PRINT "PASS substr not found"
 passed:=passed+1
 ELSE
-PRINT "FAIL substr$ end"
+PRINT "FAIL substr not found: expected 0"
+failed:=failed+1
+ENDIF
+
+IF SUBSTR("Fort","Fortworth")=1 THEN
+PRINT "PASS substr at start"
+passed:=passed+1
+ELSE
+PRINT "FAIL substr at start: expected 1 got ";SUBSTR("Fort","Fortworth")
 failed:=failed+1
 ENDIF
 
