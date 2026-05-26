@@ -23,6 +23,7 @@ class Environment:
         self._arrays: dict[str, dict[tuple, B9Value]] = {}
         self._types: dict[str, TypeTag] = {}
         self._array_dims: dict[str, list[int]] = {}
+        self._record_templates: dict[str, dict] = {}  # name → field defaults for arrays of records
         self.parent = parent
 
     # ------------------------------------------------------------------ #
@@ -33,10 +34,13 @@ class Environment:
         self._types[name] = tag
         self._vars[name] = DEFAULT_VALUES[tag]
 
-    def declare_array(self, name: str, dims: list[int], tag: TypeTag) -> None:
+    def declare_array(self, name: str, dims: list[int], tag: TypeTag,
+                      record_template: dict | None = None) -> None:
         self._types[name] = tag
         self._array_dims[name] = dims
         self._arrays[name] = {}
+        if record_template is not None:
+            self._record_templates[name] = record_template
 
     def declare_record(self, name: str, fields: dict) -> None:
         self._types[name] = TypeTag.RECORD
@@ -51,7 +55,11 @@ class Environment:
             return self._vars[name]
         if self.parent:
             return self.parent.get(name)
-        raise UndefinedVariable(f"Variable '{name}' not defined")
+        # Auto-initialize: string variables default to "", numerics to 0
+        default = B9Value.string("") if name.endswith("$") else B9Value.integer(0)
+        self._vars[name] = default
+        self._types[name] = default.tag
+        return default
 
     def set(self, name: str, value: B9Value) -> None:
         if name in self._vars:
@@ -76,7 +84,14 @@ class Environment:
     def get_array(self, name: str, indices: tuple) -> B9Value:
         if name in self._arrays:
             tag = self._types[name]
-            return self._arrays[name].get(indices, DEFAULT_VALUES[tag])
+            if indices not in self._arrays[name]:
+                if tag == TypeTag.RECORD and name in self._record_templates:
+                    import copy
+                    val = B9Value.record(copy.deepcopy(self._record_templates[name]))
+                    self._arrays[name][indices] = val
+                    return val
+                return DEFAULT_VALUES[tag]
+            return self._arrays[name][indices]
         if self.parent:
             return self.parent.get_array(name, indices)
         raise UndefinedVariable(f"Array '{name}' not defined")

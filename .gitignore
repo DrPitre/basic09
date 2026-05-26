@@ -1,17 +1,2 @@
-# Virtualenv
-bin/
-lib/
-include/
-pyvenv.cfg
-path/
-
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyc
-
-# Test / build artifacts
-.pytest_cache/
-*.profraw
-out
+# Created by venv; see https://docs.python.org/3/library/venv.html
+*
