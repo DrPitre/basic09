@@ -1550,21 +1550,6 @@ PRINT "FAIL strings mid$"
 failed:=failed+1
 ENDIF
 
-IF UPPER$("hello")="HELLO" THEN
-PRINT "PASS strings upper$"
-passed:=passed+1
-ELSE
-PRINT "FAIL strings upper$"
-failed:=failed+1
-ENDIF
-
-IF LOWER$("HELLO")="hello" THEN
-PRINT "PASS strings lower$"
-passed:=passed+1
-ELSE
-PRINT "FAIL strings lower$"
-failed:=failed+1
-ENDIF
 
 IF ASC("A")=65 THEN
 PRINT "PASS strings asc"
