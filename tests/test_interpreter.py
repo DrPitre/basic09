@@ -8,7 +8,7 @@ import pytest
 
 from basic09 import Basic09Interpreter
 
-UNITTEST_B09 = os.path.join(os.path.dirname(__file__), "unittest.b09")
+UNITTEST_B09 = os.path.join(os.path.dirname(__file__), "unittests")
 
 _PROCEDURE_NAMES = [
     "testIntegerArithmetic",
