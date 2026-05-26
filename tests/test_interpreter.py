@@ -42,6 +42,17 @@ _PROCEDURE_NAMES = [
     "testMoreMath",
     "testBitwise",
     "testSubstr",
+    "testArithmetic",
+    "testArrays",
+    "testTypedVars",
+    "testForLoop",
+    "testGotoBasic",
+    "testIfBasic",
+    "testLoopBasic",
+    "testMathBasic",
+    "testPrint",
+    "testProcs",
+    "testStringsExt",
 ]
 
 

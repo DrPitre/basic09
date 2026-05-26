@@ -971,6 +971,632 @@ ENDIF
 
 END
 
+PROCEDURE testArithmetic
+PARAM passed,failed:INTEGER
+DIM n:INTEGER
+DIM r:REAL
+
+n:=3+4
+IF n=7 THEN
+PRINT "PASS arith add"
+passed:=passed+1
+ELSE
+PRINT "FAIL arith add: expected 7 got ";n
+failed:=failed+1
+ENDIF
+
+n:=10-3
+IF n=7 THEN
+PRINT "PASS arith sub"
+passed:=passed+1
+ELSE
+PRINT "FAIL arith sub: expected 7 got ";n
+failed:=failed+1
+ENDIF
+
+n:=3*4
+IF n=12 THEN
+PRINT "PASS arith mul"
+passed:=passed+1
+ELSE
+PRINT "FAIL arith mul: expected 12 got ";n
+failed:=failed+1
+ENDIF
+
+r:=7.0/2.0
+IF ABS(r-3.5)<.0001 THEN
+PRINT "PASS arith div"
+passed:=passed+1
+ELSE
+PRINT "FAIL arith div: expected 3.5 got ";r
+failed:=failed+1
+ENDIF
+
+n:=7 DIV 2
+IF n=3 THEN
+PRINT "PASS arith idiv"
+passed:=passed+1
+ELSE
+PRINT "FAIL arith idiv: expected 3 got ";n
+failed:=failed+1
+ENDIF
+
+n:=MOD(10,3)
+IF n=1 THEN
+PRINT "PASS arith mod"
+passed:=passed+1
+ELSE
+PRINT "FAIL arith mod: expected 1 got ";n
+failed:=failed+1
+ENDIF
+
+n:=2^8
+IF n=256 THEN
+PRINT "PASS arith power"
+passed:=passed+1
+ELSE
+PRINT "FAIL arith power: expected 256 got ";n
+failed:=failed+1
+ENDIF
+
+n:=-5
+IF n=0-5 THEN
+PRINT "PASS arith negation"
+passed:=passed+1
+ELSE
+PRINT "FAIL arith negation"
+failed:=failed+1
+ENDIF
+
+n:=(2+3)*4
+IF n=20 THEN
+PRINT "PASS arith parens"
+passed:=passed+1
+ELSE
+PRINT "FAIL arith parens: expected 20 got ";n
+failed:=failed+1
+ENDIF
+
+n:=2+3*4
+IF n=14 THEN
+PRINT "PASS arith precedence"
+passed:=passed+1
+ELSE
+PRINT "FAIL arith precedence: expected 14 got ";n
+failed:=failed+1
+ENDIF
+
+END
+
+PROCEDURE testArrays
+PARAM passed,failed:INTEGER
+DIM a(5),v:INTEGER
+DIM m(3,3):INTEGER
+
+a(1):=10
+a(2):=20
+v:=a(1)
+IF v=10 THEN
+PRINT "PASS arrays set get 1"
+passed:=passed+1
+ELSE
+PRINT "FAIL arrays set get 1: expected 10 got ";v
+failed:=failed+1
+ENDIF
+
+v:=a(2)
+IF v=20 THEN
+PRINT "PASS arrays set get 2"
+passed:=passed+1
+ELSE
+PRINT "FAIL arrays set get 2: expected 20 got ";v
+failed:=failed+1
+ENDIF
+
+m(1,1):=7
+v:=m(1,1)
+IF v=7 THEN
+PRINT "PASS arrays 2d set get"
+passed:=passed+1
+ELSE
+PRINT "FAIL arrays 2d set get: expected 7 got ";v
+failed:=failed+1
+ENDIF
+
+END
+
+PROCEDURE testTypedVars
+PARAM passed,failed:INTEGER
+DIM i:INTEGER
+DIM r:REAL
+DIM s:STRING[10]
+DIM b:BOOLEAN
+
+i:=42
+IF i=42 THEN
+PRINT "PASS typed integer assign"
+passed:=passed+1
+ELSE
+PRINT "FAIL typed integer assign: expected 42 got ";i
+failed:=failed+1
+ENDIF
+
+r:=3.14
+IF ABS(r-3.14)<.0001 THEN
+PRINT "PASS typed real assign"
+passed:=passed+1
+ELSE
+PRINT "FAIL typed real assign: expected 3.14 got ";r
+failed:=failed+1
+ENDIF
+
+s:="hi"
+IF s="hi" THEN
+PRINT "PASS typed string assign"
+passed:=passed+1
+ELSE
+PRINT "FAIL typed string assign"
+failed:=failed+1
+ENDIF
+
+b:=TRUE
+IF b THEN
+PRINT "PASS typed boolean true"
+passed:=passed+1
+ELSE
+PRINT "FAIL typed boolean true"
+failed:=failed+1
+ENDIF
+
+b:=FALSE
+IF NOT b THEN
+PRINT "PASS typed boolean false"
+passed:=passed+1
+ELSE
+PRINT "FAIL typed boolean false"
+failed:=failed+1
+ENDIF
+
+r:=3
+IF ABS(r-3.0)<.0001 THEN
+PRINT "PASS typed int to real coerce"
+passed:=passed+1
+ELSE
+PRINT "FAIL typed int to real coerce: expected 3.0 got ";r
+failed:=failed+1
+ENDIF
+
+END
+
+PROCEDURE testForLoop
+PARAM passed,failed:INTEGER
+DIM i,s:INTEGER
+
+s:=0
+FOR i:=1 TO 3
+s:=s+i
+NEXT i
+IF s=6 THEN
+PRINT "PASS for basic count"
+passed:=passed+1
+ELSE
+PRINT "FAIL for basic count: expected 6 got ";s
+failed:=failed+1
+ENDIF
+
+s:=0
+FOR i:=1 TO 9 STEP 2
+s:=s+1
+NEXT i
+IF s=5 THEN
+PRINT "PASS for step 2"
+passed:=passed+1
+ELSE
+PRINT "FAIL for step 2: expected 5 got ";s
+failed:=failed+1
+ENDIF
+
+s:=0
+FOR i:=3 TO 1 STEP -1
+s:=s+1
+NEXT i
+IF s=3 THEN
+PRINT "PASS for negative step"
+passed:=passed+1
+ELSE
+PRINT "FAIL for negative step: expected 3 got ";s
+failed:=failed+1
+ENDIF
+
+s:=0
+FOR i:=5 TO 1
+s:=s+1
+NEXT i
+IF s=0 THEN
+PRINT "PASS for empty range"
+passed:=passed+1
+ELSE
+PRINT "FAIL for empty range: expected 0 got ";s
+failed:=failed+1
+ENDIF
+
+s:=0
+FOR i:=1 TO 10
+s:=s+i
+NEXT i
+IF s=55 THEN
+PRINT "PASS for accumulator"
+passed:=passed+1
+ELSE
+PRINT "FAIL for accumulator: expected 55 got ";s
+failed:=failed+1
+ENDIF
+
+END
+
+PROCEDURE testGotoBasic
+PARAM passed,failed:INTEGER
+DIM i:INTEGER
+
+GOTO skipBad
+PRINT "FAIL goto skip"
+failed:=failed+1
+skipBad:
+PRINT "PASS goto skip"
+passed:=passed+1
+
+i:=2
+ON i GOTO onL1,onL2,onL3
+onL1:
+PRINT "FAIL on goto branch"
+failed:=failed+1
+GOTO onDone
+onL2:
+PRINT "PASS on goto branch"
+passed:=passed+1
+GOTO onDone
+onL3:
+PRINT "FAIL on goto branch"
+failed:=failed+1
+onDone:
+
+END
+
+PROCEDURE testIfBasic
+PARAM passed,failed:INTEGER
+
+IF 1=1 THEN
+PRINT "PASS if true"
+passed:=passed+1
+ELSE
+PRINT "FAIL if true"
+failed:=failed+1
+ENDIF
+
+IF 1=2 THEN
+PRINT "FAIL if false"
+failed:=failed+1
+ELSE
+PRINT "PASS if false"
+passed:=passed+1
+ENDIF
+
+IF TRUE THEN
+IF FALSE THEN
+PRINT "FAIL if nested"
+failed:=failed+1
+ELSE
+PRINT "PASS if nested"
+passed:=passed+1
+ENDIF
+ENDIF
+
+END
+
+PROCEDURE testLoopBasic
+PARAM passed,failed:INTEGER
+DIM i:INTEGER
+
+i:=1
+WHILE i<=3 DO
+i:=i+1
+ENDWHILE
+IF i=4 THEN
+PRINT "PASS while basic"
+passed:=passed+1
+ELSE
+PRINT "FAIL while basic: expected 4 got ";i
+failed:=failed+1
+ENDIF
+
+i:=10
+WHILE i<5 DO
+i:=i+1
+ENDWHILE
+IF i=10 THEN
+PRINT "PASS while false entry"
+passed:=passed+1
+ELSE
+PRINT "FAIL while false entry: expected 10 got ";i
+failed:=failed+1
+ENDIF
+
+i:=1
+REPEAT
+i:=i+1
+UNTIL i>3
+IF i=4 THEN
+PRINT "PASS repeat basic"
+passed:=passed+1
+ELSE
+PRINT "FAIL repeat basic: expected 4 got ";i
+failed:=failed+1
+ENDIF
+
+i:=99
+REPEAT
+i:=i+1
+UNTIL TRUE
+IF i=100 THEN
+PRINT "PASS repeat once"
+passed:=passed+1
+ELSE
+PRINT "FAIL repeat once: expected 100 got ";i
+failed:=failed+1
+ENDIF
+
+i:=0
+LOOP
+i:=i+1
+EXITIF i=3 THEN
+ENDEXIT
+ENDLOOP
+IF i=3 THEN
+PRINT "PASS loop exitif"
+passed:=passed+1
+ELSE
+PRINT "FAIL loop exitif: expected 3 got ";i
+failed:=failed+1
+ENDIF
+
+END
+
+PROCEDURE testMathBasic
+PARAM passed,failed:INTEGER
+DIM r:REAL
+
+IF ABS(5)=5 THEN
+PRINT "PASS math abs pos"
+passed:=passed+1
+ELSE
+PRINT "FAIL math abs pos"
+failed:=failed+1
+ENDIF
+
+IF ABS(-5)=5 THEN
+PRINT "PASS math abs neg"
+passed:=passed+1
+ELSE
+PRINT "FAIL math abs neg"
+failed:=failed+1
+ENDIF
+
+IF INT(3.9)=3 THEN
+PRINT "PASS math int"
+passed:=passed+1
+ELSE
+PRINT "FAIL math int: expected 3 got ";INT(3.9)
+failed:=failed+1
+ENDIF
+
+r:=SQR(9.0)
+IF ABS(r-3.0)<.0001 THEN
+PRINT "PASS math sqr"
+passed:=passed+1
+ELSE
+PRINT "FAIL math sqr: expected 3 got ";r
+failed:=failed+1
+ENDIF
+
+r:=SIN(0.0)
+IF ABS(r)<.0001 THEN
+PRINT "PASS math sin zero"
+passed:=passed+1
+ELSE
+PRINT "FAIL math sin zero: expected 0 got ";r
+failed:=failed+1
+ENDIF
+
+r:=COS(0.0)
+IF ABS(r-1.0)<.0001 THEN
+PRINT "PASS math cos zero"
+passed:=passed+1
+ELSE
+PRINT "FAIL math cos zero: expected 1 got ";r
+failed:=failed+1
+ENDIF
+
+IF SGN(5)=1 THEN
+PRINT "PASS math sgn pos"
+passed:=passed+1
+ELSE
+PRINT "FAIL math sgn pos"
+failed:=failed+1
+ENDIF
+
+IF SGN(-5)=-1 THEN
+PRINT "PASS math sgn neg"
+passed:=passed+1
+ELSE
+PRINT "FAIL math sgn neg"
+failed:=failed+1
+ENDIF
+
+IF SGN(0)=0 THEN
+PRINT "PASS math sgn zero"
+passed:=passed+1
+ELSE
+PRINT "FAIL math sgn zero"
+failed:=failed+1
+ENDIF
+
+END
+
+PROCEDURE testPrint
+PARAM passed,failed:INTEGER
+DIM n:INTEGER
+DIM r:REAL
+
+n:=1+2
+IF n=3 THEN
+PRINT "PASS print int expr"
+passed:=passed+1
+ELSE
+PRINT "FAIL print int expr: expected 3 got ";n
+failed:=failed+1
+ENDIF
+
+r:=1.5+0.5
+IF ABS(r-2.0)<.0001 THEN
+PRINT "PASS print real expr"
+passed:=passed+1
+ELSE
+PRINT "FAIL print real expr: expected 2.0 got ";r
+failed:=failed+1
+ENDIF
+
+END
+
+PROCEDURE testProcs
+PARAM passed,failed:INTEGER
+DIM x:INTEGER
+
+RUN procsGreet(passed,failed)
+RUN procsDouble(7,passed,failed)
+x:=0
+RUN procsSetx
+IF x=0 THEN
+PRINT "PASS procs scope isolation"
+passed:=passed+1
+ELSE
+PRINT "FAIL procs scope isolation: expected 0 got ";x
+failed:=failed+1
+ENDIF
+RUN procsEarly(FALSE,passed,failed)
+
+END
+
+PROCEDURE procsGreet
+PARAM passed,failed:INTEGER
+PRINT "PASS procs simple call"
+passed:=passed+1
+END
+
+PROCEDURE procsDouble
+PARAM n,passed,failed:INTEGER
+IF n*2=14 THEN
+PRINT "PASS procs with args"
+passed:=passed+1
+ELSE
+PRINT "FAIL procs with args: expected 14 got ";n*2
+failed:=failed+1
+ENDIF
+END
+
+PROCEDURE procsSetx
+DIM x:INTEGER
+x:=99
+END
+
+PROCEDURE procsEarly
+PARAM b:BOOLEAN
+PARAM passed,failed:INTEGER
+IF b THEN
+RETURN
+ENDIF
+PRINT "PASS procs early return"
+passed:=passed+1
+END
+
+PROCEDURE testStringsExt
+PARAM passed,failed:INTEGER
+DIM s:STRING[30]
+
+s:="Hello"+", "+"World!"
+IF s="Hello, World!" THEN
+PRINT "PASS strings concat"
+passed:=passed+1
+ELSE
+PRINT "FAIL strings concat"
+failed:=failed+1
+ENDIF
+
+IF LEN("hello")=5 THEN
+PRINT "PASS strings len"
+passed:=passed+1
+ELSE
+PRINT "FAIL strings len"
+failed:=failed+1
+ENDIF
+
+IF LEFT$("hello",3)="hel" THEN
+PRINT "PASS strings left$"
+passed:=passed+1
+ELSE
+PRINT "FAIL strings left$"
+failed:=failed+1
+ENDIF
+
+IF RIGHT$("hello",3)="llo" THEN
+PRINT "PASS strings right$"
+passed:=passed+1
+ELSE
+PRINT "FAIL strings right$"
+failed:=failed+1
+ENDIF
+
+IF MID$("hello",2,3)="ell" THEN
+PRINT "PASS strings mid$"
+passed:=passed+1
+ELSE
+PRINT "FAIL strings mid$"
+failed:=failed+1
+ENDIF
+
+IF UPPER$("hello")="HELLO" THEN
+PRINT "PASS strings upper$"
+passed:=passed+1
+ELSE
+PRINT "FAIL strings upper$"
+failed:=failed+1
+ENDIF
+
+IF LOWER$("HELLO")="hello" THEN
+PRINT "PASS strings lower$"
+passed:=passed+1
+ELSE
+PRINT "FAIL strings lower$"
+failed:=failed+1
+ENDIF
+
+IF ASC("A")=65 THEN
+PRINT "PASS strings asc"
+passed:=passed+1
+ELSE
+PRINT "FAIL strings asc"
+failed:=failed+1
+ENDIF
+
+IF CHR$(65)="A" THEN
+PRINT "PASS strings chr$"
+passed:=passed+1
+ELSE
+PRINT "FAIL strings chr$"
+failed:=failed+1
+ENDIF
+
+END
+
 PROCEDURE unittest
 DIM passed,failed:INTEGER
 
@@ -1011,6 +1637,17 @@ RUN testXor(passed,failed)
 RUN testMoreMath(passed,failed)
 RUN testBitwise(passed,failed)
 RUN testSubstr(passed,failed)
+RUN testArithmetic(passed,failed)
+RUN testArrays(passed,failed)
+RUN testTypedVars(passed,failed)
+RUN testForLoop(passed,failed)
+RUN testGotoBasic(passed,failed)
+RUN testIfBasic(passed,failed)
+RUN testLoopBasic(passed,failed)
+RUN testMathBasic(passed,failed)
+RUN testPrint(passed,failed)
+RUN testProcs(passed,failed)
+RUN testStringsExt(passed,failed)
 
 PRINT "------------------"
 PRINT "Passed: ";passed
