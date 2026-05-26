@@ -57,6 +57,12 @@ def _strip_comments(source: str) -> str:
 class _Return(Exception):
     pass
 
+class _End(Exception):
+    pass
+
+class _Stop(Exception):
+    pass
+
 class _Exit(Exception):
     """EXIT from LOOP."""
     pass
@@ -157,7 +163,7 @@ def _format_using(fmt: str, values: list) -> str:
                 width, dec = int(m.group(1)), int(m.group(2))
                 v = values[val_idx].as_float()
                 val_idx += 1
-                s = f"{v:{width}.{dec}f}" if c in "Rr" else f"{v:{width}.{dec}e}"
+                s = f"{v:.{dec}f}" if c in "Rr" else f"{v:.{dec}e}"
                 result.append(s)
                 i += len(m.group(0))
             else:
@@ -173,7 +179,7 @@ def _format_using(fmt: str, values: list) -> str:
                 val_idx += 1
                 s = str(v)
                 if align == "<":
-                    s = s.ljust(width)
+                    s = s
                 else:
                     s = s.rjust(width)
                 result.append(s)
@@ -181,6 +187,9 @@ def _format_using(fmt: str, values: list) -> str:
             else:
                 result.append(c)
                 i += 1
+        elif c == ",":
+            result.append(" ")
+            i += 1
         else:
             result.append(c)
             i += 1
@@ -241,13 +250,13 @@ class Basic09Interpreter:
             proc = self._procedures[self._main_proc]
             try:
                 self._call_procedure(proc, [], self._env)
-            except _Return:
+            except (_Return, _End, _Stop):
                 pass
         else:
             try:
                 self._exec_statement_list(self._tree.children, self._env,
                                           _global_ctx=self._global_labels)
-            except _Return:
+            except (_Return, _End, _Stop):
                 pass
 
     def run_procedure(self, name: str, args: list[B9Value] | None = None) -> None:
@@ -326,7 +335,8 @@ class Basic09Interpreter:
         def visit(children: list) -> None:
             stmts = self._flatten_stmts(children)
             for label, idx in self._label_index(stmts).items():
-                targets.setdefault(label, (stmts, idx))
+                if label not in targets or len(stmts) > len(targets[label][0]):
+                    targets[label] = (stmts, idx)
             for child in children:
                 if isinstance(child, Tree):
                     if child.data == "statement_list":
@@ -437,8 +447,8 @@ class Basic09Interpreter:
             "run_stmt":         self._exec_run,
             "proc_section":     lambda s, e: None,   # skip — pre-collected
             "return_stmt":      lambda s, e: (_ for _ in ()).throw(_Return()),
-            "end_stmt":         lambda s, e: (_ for _ in ()).throw(_Return()),
-            "stop_stmt":        lambda s, e: sys.exit(0),
+            "end_stmt":         lambda s, e: (_ for _ in ()).throw(_End()),
+            "stop_stmt":        lambda s, e: (_ for _ in ()).throw(_Stop()),
             "goto_stmt":        self._exec_goto,
             "gosub_stmt":       self._exec_gosub,
             "on_goto_stmt":     self._exec_on_goto,
@@ -468,8 +478,13 @@ class Basic09Interpreter:
     # ------------------------------------------------------------------ #
 
     def _exec_dim(self, stmt: Tree, env: Environment) -> None:
+        for child in stmt.children:
+            if isinstance(child, Tree) and child.data == "dim_group":
+                self._exec_dim_group(child, env)
+
+    def _exec_dim_group(self, group: Tree, env: Environment) -> None:
         # Last child is always the type_spec; preceding children are dim_var nodes
-        type_node = stmt.children[-1]
+        type_node = group.children[-1]
         tag = self._parse_type(type_node)
 
         record_template: dict | None = None
@@ -484,7 +499,7 @@ class Basic09Interpreter:
                 else:
                     record_template[fname] = DEFAULT_VALUES[ftag]
 
-        for decl in stmt.children[:-1]:
+        for decl in group.children[:-1]:
             if not isinstance(decl, Tree):
                 continue
             name = str(decl.children[0]).upper()
@@ -585,6 +600,18 @@ class Basic09Interpreter:
                     if n > col:
                         output.append(" " * (n - col))
                         col = n
+                elif (len(child.children) == 1
+                      and isinstance(child.children[0], Tree)
+                      and child.children[0].data == "var"
+                      and str(child.children[0].children[0]).upper() == "TAB"
+                      and len(child.children[0].children) > 1):
+                    n = self._eval_expr(
+                        self._exprs_from_index(child.children[0].children[1])[0],
+                        env,
+                    ).as_int()
+                    if n > col:
+                        output.append(" " * (n - col))
+                        col = n
                 else:
                     val = str(self._eval_expr(child.children[0], env))
                     output.append(val)
@@ -630,7 +657,7 @@ class Basic09Interpreter:
             elif isinstance(child, Tree) and child.data == "var_list":
                 var_list_node = child
 
-        line = input(prompt + " " if prompt else "? ")
+        line = input(prompt if prompt else "? ")
         values = [v.strip() for v in line.split(",")]
         if var_list_node:
             for var_node, raw in zip(var_list_node.children, values):
@@ -877,7 +904,7 @@ class Basic09Interpreter:
         try:
             self._exec_statement_list(body_stmts, local_env,
                                       _global_ctx=proc_global_ctx)
-        except _Return:
+        except (_Return, _End):
             pass
 
         # Copy-back: write PARAM values back to simple variable args in caller's scope

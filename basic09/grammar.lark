@@ -11,6 +11,7 @@ statement: dim_stmt
          | print_stmt
          | print_using_stmt
          | input_stmt
+         | if_goto_stmt
          | if_stmt
          | for_stmt
          | while_stmt
@@ -36,7 +37,8 @@ statement: dim_stmt
          | expr_stmt
 
 // Declarations
-dim_stmt: "DIM" dim_var ("," dim_var)* ":" type_spec
+dim_stmt: "DIM" dim_group (";" dim_group)*
+dim_group: dim_var ("," dim_var)* ":" type_spec
 dim_var: IDENT
        | IDENT "(" expr_list ")"
 
@@ -77,10 +79,11 @@ var_list: var ("," var)*
 // IF
 if_stmt: "IF" expr "THEN" NEWLINE statement_list "ENDIF"
        | "IF" expr "THEN" NEWLINE statement_list "ELSE" NEWLINE statement_list "ENDIF"
-       | "IF" expr "THEN" INT_LIT    -> if_goto_stmt
        | "IF" expr "THEN" statement NEWLINE statement_list "ENDIF"
        | "IF" expr "THEN" statement NEWLINE? "ENDIF"
        | "IF" expr "THEN" statement
+
+if_goto_stmt.3: "IF" expr "THEN" INT_LIT
 
 // FOR — accept := or = for loop variable assignment
 for_stmt: "FOR" IDENT (":=" | "=") expr "TO" expr ("STEP" expr)? NEWLINE statement_list "NEXT" IDENT?
