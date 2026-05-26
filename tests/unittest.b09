@@ -1012,15 +1012,6 @@ PRINT "FAIL arith div: expected 3.5 got ";r
 failed:=failed+1
 ENDIF
 
-n:=7 DIV 2
-IF n=3 THEN
-PRINT "PASS arith idiv"
-passed:=passed+1
-ELSE
-PRINT "FAIL arith idiv: expected 3 got ";n
-failed:=failed+1
-ENDIF
-
 n:=MOD(10,3)
 IF n=1 THEN
 PRINT "PASS arith mod"
@@ -1238,27 +1229,23 @@ PROCEDURE testGotoBasic
 PARAM passed,failed:INTEGER
 DIM i:INTEGER
 
-GOTO skipBad
+GOTO 400
 PRINT "FAIL goto skip"
 failed:=failed+1
-skipBad:
-PRINT "PASS goto skip"
+400 PRINT "PASS goto skip"
 passed:=passed+1
 
 i:=2
-ON i GOTO onL1,onL2,onL3
-onL1:
-PRINT "FAIL on goto branch"
+ON i GOTO 410,420,430
+410 PRINT "FAIL on goto branch"
 failed:=failed+1
-GOTO onDone
-onL2:
-PRINT "PASS on goto branch"
+GOTO 440
+420 PRINT "PASS on goto branch"
 passed:=passed+1
-GOTO onDone
-onL3:
-PRINT "FAIL on goto branch"
+GOTO 440
+430 PRINT "FAIL on goto branch"
 failed:=failed+1
-onDone:
+440 i:=i
 
 END
 

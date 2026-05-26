@@ -604,11 +604,8 @@ class Basic09Interpreter:
             raise _Goto(targets[idx - 1])
 
     def _resolve_goto_target(self, node: Tree) -> str:
-        """Extract label string from a goto_target node, normalising line numbers."""
-        child = node.children[0]
-        if isinstance(child, Token) and child.type == "INT_LIT":
-            return f"LN{child}"
-        return str(child).upper()
+        """Extract label string from a goto_target node (always a line number)."""
+        return f"LN{node.children[0]}"
 
     # ------------------------------------------------------------------ #
     # READ / DATA / RESTORE                                                #
@@ -693,7 +690,6 @@ class Basic09Interpreter:
             "sub_op":  lambda a, b: self._arith(a, b, "-"),
             "mul_op":  lambda a, b: self._arith(a, b, "*"),
             "div_op":  lambda a, b: self._arith(a, b, "/"),
-            "idiv_op": lambda a, b: B9Value.integer(a.as_int() // b.as_int()),
             "pow_op":  lambda a, b: B9Value.real(a.as_float() ** b.as_float()),
             "eq_op":   lambda a, b: B9Value.boolean(self._compare(a, b) == 0),
             "ne_op":   lambda a, b: B9Value.boolean(self._compare(a, b) != 0),

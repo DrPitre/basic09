@@ -99,8 +99,8 @@ param: IDENT ":" type_spec
 return_stmt: "RETURN"
 end_stmt: "END"
 
-// GOTO / GOSUB — targets can be named labels or line numbers
-goto_target: IDENT | INT_LIT
+// GOTO / GOSUB — targets are line numbers only
+goto_target: INT_LIT
 goto_stmt: "GOTO" goto_target
 gosub_stmt: "GOSUB" goto_target
 on_goto_stmt: "ON" expr "GOTO" goto_target ("," goto_target)*
@@ -155,7 +155,6 @@ array_index: "(" expr_list ")"
 ?mul_expr: unary_expr
          | mul_expr "*" unary_expr -> mul_op
          | mul_expr "/" unary_expr -> div_op
-         | mul_expr "DIV" unary_expr -> idiv_op
 
 ?unary_expr: "-" unary_expr        -> neg_op
            | "+" unary_expr
@@ -191,7 +190,7 @@ FLOAT_LIT: /[0-9]+\.[0-9]+([eE][+-]?[0-9]+)?/ | /\.[0-9]+([eE][+-]?[0-9]+)?/ | /
 STRING_LIT: /\"[^\"]*\"/
 // $ suffix allowed so CHR$, LEFT$, STR$ etc. parse as identifiers
 // Negative lookahead prevents keywords from matching as identifiers
-IDENT: /(?!(DIM|TYPE|FOR|NEXT|IF|THEN|ELSE|ENDIF|EXITIF|ENDEXIT|EXIT|REPEAT|UNTIL|LOOP|ENDLOOP|WHILE|DO|ENDWHILE|RUN|PROCEDURE|PARAM|RETURN|END|GOTO|GOSUB|ON|READ|DATA|RESTORE|REM|PRINT|INPUT|STEP|TO|AND|OR|XOR|NOT|DIV|TRUE|FALSE|PI|INTEGER|REAL|STRING|BOOLEAN|BYTE|DEG|RAD|BASE)\b)[A-Za-z][A-Za-z0-9_]*\$?/
+IDENT: /(?!(DIM|TYPE|FOR|NEXT|IF|THEN|ELSE|ENDIF|EXITIF|ENDEXIT|EXIT|REPEAT|UNTIL|LOOP|ENDLOOP|WHILE|DO|ENDWHILE|RUN|PROCEDURE|PARAM|RETURN|END|GOTO|GOSUB|ON|READ|DATA|RESTORE|REM|PRINT|INPUT|STEP|TO|AND|OR|XOR|NOT|TRUE|FALSE|PI|INTEGER|REAL|STRING|BOOLEAN|BYTE|DEG|RAD|BASE)\b)[A-Za-z][A-Za-z0-9_]*\$?/
 
 NEWLINE: /\r?\n/
 WS: /[ \t]+/
