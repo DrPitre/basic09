@@ -102,8 +102,6 @@ _BUILTINS: dict[str, Any] = {
     "LOR":    lambda a, b: B9Value.integer(a.as_int() | b.as_int()),
     "LXOR":   lambda a, b: B9Value.integer(a.as_int() ^ b.as_int()),
     "LNOT":   lambda a: B9Value.integer(~a.as_int() & 0xFFFF),
-    "UPPER$": lambda a: B9Value.string(a.as_str().upper()),
-    "LOWER$": lambda a: B9Value.string(a.as_str().lower()),
 }
 
 
