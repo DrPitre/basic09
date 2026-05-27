@@ -142,6 +142,9 @@ def _format_using(fmt: str, values: list) -> str:
       Rw.d             — real, width w, d decimal places
       Iw[<|>]          — integer, width w, optional < left or > right justify
       Ew.d             — real in scientific notation
+      Hw               — integer as hexadecimal, w digits (zero-padded)
+      Sw               — string, take first w characters (space-padded)
+      ,                — separator between format items (no output)
     """
     result = []
     val_idx = 0
@@ -187,8 +190,32 @@ def _format_using(fmt: str, values: list) -> str:
             else:
                 result.append(c)
                 i += 1
+        elif c in "Hh" and i + 1 < len(fmt) and fmt[i + 1].isdigit():
+            # Hex format: H<width>
+            m = re.match(r'[Hh](\d+)', fmt[i:])
+            if m and val_idx < len(values):
+                width = int(m.group(1))
+                v = values[val_idx].as_int()
+                val_idx += 1
+                result.append(format(v & 0xFFFFFFFF, f'0{width}X'))
+                i += len(m.group(0))
+            else:
+                result.append(c)
+                i += 1
+        elif c in "Ss" and i + 1 < len(fmt) and fmt[i + 1].isdigit():
+            # String format: S<width>
+            m = re.match(r'[Ss](\d+)', fmt[i:])
+            if m and val_idx < len(values):
+                width = int(m.group(1))
+                s = str(values[val_idx])
+                val_idx += 1
+                result.append(s[:width].ljust(width))
+                i += len(m.group(0))
+            else:
+                result.append(c)
+                i += 1
         elif c == ",":
-            result.append(" ")
+            # Separator between format items — no output
             i += 1
         else:
             result.append(c)
@@ -233,17 +260,19 @@ class Basic09Interpreter:
         self._global_stmts = self._flatten_stmts(self._tree.children)
         self._global_labels = self._collect_label_targets(self._tree.children)
         # Track first procedure declared (the main program entry point)
-        self._main_proc = self._find_first_procedure(self._tree.children)
+        self._main_proc = self._find_last_procedure(self._tree.children)
 
-    def _find_first_procedure(self, nodes: list) -> str | None:
+    def _find_last_procedure(self, nodes: list) -> str | None:
+        result = None
         for node in nodes:
             if isinstance(node, Tree):
                 if node.data == "proc_section":
-                    return str(node.children[0]).upper()
-                result = self._find_first_procedure(node.children)
-                if result:
-                    return result
-        return None
+                    result = str(node.children[0]).upper()
+                else:
+                    sub = self._find_last_procedure(node.children)
+                    if sub is not None:
+                        result = sub
+        return result
 
     def run(self) -> None:
         if self._main_proc and self._main_proc in self._procedures:
@@ -495,7 +524,7 @@ class Basic09Interpreter:
             record_template = {}
             for fname, ftag, fdim in fields:
                 if fdim is not None:
-                    record_template[fname] = [DEFAULT_VALUES[ftag]] * fdim
+                    record_template[fname] = [DEFAULT_VALUES[ftag]] * (fdim + 1)
                 else:
                     record_template[fname] = DEFAULT_VALUES[ftag]
 
@@ -628,7 +657,14 @@ class Basic09Interpreter:
         fmt = str(fmt_token)[1:-1]  # strip outer quotes
         value_nodes = [c for c in stmt.children[1:] if isinstance(c, Tree)]
         values = [self._eval_expr(v, env) for v in value_nodes]
-        print(_format_using(fmt, values))
+        trailing_sep = any(
+            isinstance(c, Token) and c.type == "PRINT_SEP"
+            for c in stmt.children[1:]
+        )
+        if trailing_sep:
+            print(_format_using(fmt, values), end="")
+        else:
+            print(_format_using(fmt, values))
 
     def _exec_if_goto(self, stmt: Tree, env: Environment) -> None:
         cond = self._eval_expr(stmt.children[0], env).as_bool()
@@ -886,11 +922,28 @@ class Basic09Interpreter:
                     continue  # skip type declarations before PARAM
                 if node.data != "param_stmt":
                     break
-                tag = self._parse_type(node.children[-1])
+                type_node = node.children[-1]
+                tag = self._parse_type(type_node)
+                record_template: dict | None = None
+                if tag == TypeTag.RECORD:
+                    type_name = str(type_node.children[0]).upper()
+                    fields = self._type_defs.get(type_name, [])
+                    from .types import DEFAULT_VALUES
+                    import copy as _copy
+                    record_template = {}
+                    for fname, ftag, fdim in fields:
+                        if fdim is not None:
+                            record_template[fname] = [DEFAULT_VALUES[ftag]] * (fdim + 1)
+                        else:
+                            record_template[fname] = DEFAULT_VALUES[ftag]
                 for child in node.children[:-1]:
                     if isinstance(child, Token):
                         pname = str(child).upper()
-                        local_env.declare(pname, tag)
+                        if record_template is not None:
+                            import copy as _copy
+                            local_env.declare_record(pname, _copy.deepcopy(record_template))
+                        else:
+                            local_env.declare(pname, tag)
                         param_names.append(pname)
 
         for pname, arg in zip(param_names, args):

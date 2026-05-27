@@ -70,7 +70,7 @@ print_item: expr | TAB "(" expr ")"
 PRINT_SEP: "," | ";"
 
 // PRINT USING — format string followed by value list
-print_using_stmt: "PRINT" "USING" STRING_LIT ("," expr)*
+print_using_stmt: "PRINT" "USING" STRING_LIT ("," expr)* PRINT_SEP?
 
 // Input
 input_stmt: "INPUT" (STRING_LIT (";" | ","))? var_list
@@ -101,6 +101,7 @@ exit_stmt: "EXIT"
 
 // EXITIF — conditional break with optional body run before leaving
 exitif_stmt: "EXITIF" expr "THEN" NEWLINE statement_list "ENDEXIT"
+           | "EXITIF" expr "THEN" "ENDEXIT"
 
 // Procedure call
 run_stmt: "RUN" IDENT ("(" expr_list? ")")?
