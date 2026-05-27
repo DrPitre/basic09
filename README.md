@@ -1,4 +1,4 @@
-# basic09
+# Basic09 Interpreter in Python
 
 A Python interpreter for **BASIC09** — the structured BASIC dialect developed by Microware for the TRS-80 Color Computer running OS-9.
 
