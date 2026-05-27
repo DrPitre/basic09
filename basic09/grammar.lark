@@ -33,12 +33,15 @@ statement: dim_stmt
          | deg_stmt
          | rad_stmt
          | base_stmt
+         | open_stmt
+         | close_stmt
+         | get_file_stmt
          | label_stmt
          | expr_stmt
 
 // Declarations
 dim_stmt: "DIM" dim_group (";" dim_group)*
-dim_group: dim_var ("," dim_var)* ":" type_spec
+dim_group: dim_var ("," dim_var)* (":" type_spec)?
 dim_var: IDENT
        | IDENT "(" expr_list ")"
 
@@ -47,7 +50,8 @@ type_stmt: "TYPE" IDENT "=" type_field (";" type_field)*
 type_field: IDENT ("," IDENT)* ("(" INT_LIT ")")? ":" type_spec
 
 // PARAM (procedure parameter declaration — BASIC09 style)
-param_stmt: "PARAM" IDENT ("," IDENT)* ":" type_spec
+param_stmt: "PARAM" param_group (";" param_group)*
+param_group: dim_var ("," dim_var)* ":" type_spec
 
 type_spec: "INTEGER"                   -> type_integer
          | "REAL"                      -> type_real
@@ -79,8 +83,14 @@ var_list: var ("," var)*
 // IF
 if_stmt: "IF" expr "THEN" NEWLINE statement_list "ENDIF"
        | "IF" expr "THEN" NEWLINE statement_list "ELSE" NEWLINE statement_list "ENDIF"
+       | "IF" expr "THEN" NEWLINE statement_list "ELSE" statement NEWLINE? "ENDIF"
+       | "IF" expr "THEN" NEWLINE statement_list "ELSE" statement
+       | "IF" expr "THEN" statement NEWLINE "ELSE" NEWLINE statement_list "ENDIF"
+       | "IF" expr "THEN" statement NEWLINE "ELSE" statement NEWLINE? "ENDIF"
+       | "IF" expr "THEN" statement NEWLINE "ELSE" statement
        | "IF" expr "THEN" statement NEWLINE statement_list "ENDIF"
        | "IF" expr "THEN" statement NEWLINE? "ENDIF"
+       | "IF" expr "THEN" statement "ELSE" statement
        | "IF" expr "THEN" statement
 
 if_goto_stmt.3: "IF" expr "THEN" INT_LIT
@@ -109,8 +119,7 @@ run_stmt: "RUN" IDENT ("(" expr_list? ")")?
 // Procedure definition — ends at next PROCEDURE keyword or EOF; END inside is just end_stmt
 proc_section: "PROCEDURE" IDENT ("(" param_list? ")")? NEWLINE statement_list
 
-param_list: param ("," param)*
-param: IDENT ":" type_spec
+param_list: param_group (";" param_group)*
 
 // RETURN / END / STOP
 return_stmt: "RETURN"
@@ -136,14 +145,19 @@ rad_stmt: "RAD"
 // BASE — set array base index (0 or 1)
 base_stmt: "BASE" INT_LIT
 
+// File I/O
+open_stmt:     "OPEN"  "#" expr "," expr (":" IDENT)?
+close_stmt:    "CLOSE" "#" expr
+get_file_stmt: "GET"   "#" expr "," var_list
+
 // Label
 label_stmt: IDENT ":"
 
 // Expression statement (bare procedure call or function call)
 expr_stmt: expr
 
-// Variables — supports scalar, array, record field, and array-of-records field
-var: IDENT array_index? ("." IDENT array_index?)?
+// Variables — supports scalar, array, record field, and arbitrarily deep nested record access
+var: IDENT array_index? ("." IDENT array_index?)*
 array_index: "(" expr_list ")"
 
 // Expressions
@@ -194,6 +208,7 @@ expr_list: expr ("," expr)*
 // Literals
 literal: INT_LIT     -> int_lit
        | FLOAT_LIT   -> float_lit
+       | HEX_LIT     -> hex_lit
        | STRING_LIT  -> string_lit
        | "TRUE"      -> true_lit
        | FALSE_KW    -> false_lit
@@ -205,11 +220,12 @@ TAB: "TAB"
 // Terminals
 // Require digit before decimal point to avoid ambiguity with INT_LIT + orphan .N
 INT_LIT: /[0-9]+/
-FLOAT_LIT: /[0-9]+\.[0-9]+([eE][+-]?[0-9]+)?/ | /\.[0-9]+([eE][+-]?[0-9]+)?/ | /[0-9]+[eE][+-]?[0-9]+/
+HEX_LIT: /\$[0-9A-Fa-f]+/
+FLOAT_LIT: /[0-9]+\.[0-9]+([eE][+-]?[0-9]+)?/ | /[0-9]+\./ | /\.[0-9]+([eE][+-]?[0-9]+)?/ | /[0-9]+[eE][+-]?[0-9]+/
 STRING_LIT: /\"[^\"]*\"/
 // $ suffix allowed so CHR$, LEFT$, STR$ etc. parse as identifiers
 // Negative lookahead prevents keywords from matching as identifiers
-IDENT: /(?!(DIM|TYPE|FOR|NEXT|IF|THEN|ELSE|ENDIF|EXITIF|ENDEXIT|EXIT|REPEAT|UNTIL|LOOP|ENDLOOP|WHILE|DO|ENDWHILE|RUN|PROCEDURE|PARAM|RETURN|END|STOP|GOTO|GOSUB|ON|READ|DATA|RESTORE|REM|PRINT|INPUT|STEP|TO|AND|OR|XOR|NOT|TRUE|FALSE|PI|INTEGER|REAL|STRING|BOOLEAN|BYTE|DEG|RAD|BASE|LET|USING)\b)[A-Za-z][A-Za-z0-9_$]*\$?/
+IDENT: /(?!(DIM|TYPE|FOR|NEXT|IF|THEN|ELSE|ENDIF|EXITIF|ENDEXIT|EXIT|REPEAT|UNTIL|LOOP|ENDLOOP|WHILE|DO|ENDWHILE|RUN|PROCEDURE|PARAM|RETURN|END|STOP|GOTO|GOSUB|ON|READ|RESTORE|REM|PRINT|INPUT|STEP|TO|AND|OR|XOR|NOT|TRUE|FALSE|PI|INTEGER|REAL|STRING|BOOLEAN|BYTE|DEG|RAD|BASE|LET|USING)\b)[A-Za-z][A-Za-z0-9_$]*\$?/
 
 NEWLINE: /\r?\n/
 WS: /[ \t]+/

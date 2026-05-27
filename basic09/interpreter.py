@@ -47,7 +47,31 @@ def _strip_comments(source: str) -> str:
                 out.append(c if in_str else c.upper())
                 i += 1
         result.append(''.join(out))
-    return ''.join(result)
+    joined = ''.join(result)
+
+    # Join continuation lines: if a line ends with an expression-continuation
+    # character (identifier char, '$', ')') and the next non-empty line starts
+    # with '(' or '.', the newline is an expression line-break, not a statement
+    # separator — remove it so the expression stays on one logical line.
+    lines = joined.split('\n')
+    out_lines = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        while i + 1 < len(lines):
+            stripped = line.rstrip()
+            next_stripped = lines[i + 1].lstrip()
+            if (stripped
+                    and stripped[-1] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$)'
+                    and next_stripped.startswith(('(', '.'))):
+                line = stripped + next_stripped
+                i += 1
+            else:
+                break
+        out_lines.append(line)
+        i += 1
+    return '\n'.join(out_lines)
+
 
 
 # ------------------------------------------------------------------ #
@@ -488,6 +512,9 @@ class Basic09Interpreter:
             "deg_stmt":         lambda s, e: None,
             "rad_stmt":         lambda s, e: None,
             "base_stmt":        lambda s, e: None,
+            "open_stmt":        lambda s, e: None,
+            "close_stmt":       lambda s, e: None,
+            "get_file_stmt":    lambda s, e: None,
             "rem_stmt":         lambda s, e: None,
             "label_stmt":       lambda s, e: None,
             "endif_stmt":       lambda s, e: None,   # no-op: orphaned ENDIF from inline-IF patterns
@@ -512,9 +539,11 @@ class Basic09Interpreter:
                 self._exec_dim_group(child, env)
 
     def _exec_dim_group(self, group: Tree, env: Environment) -> None:
-        # Last child is always the type_spec; preceding children are dim_var nodes
-        type_node = group.children[-1]
-        tag = self._parse_type(type_node)
+        # Last child is always the type_spec (if present); preceding children are dim_var nodes
+        last = group.children[-1] if group.children else None
+        has_type = isinstance(last, Tree) and last.data.startswith("type_")
+        type_node = last if has_type else None
+        tag = self._parse_type(type_node) if type_node is not None else TypeTag.REAL
 
         record_template: dict | None = None
         if tag == TypeTag.RECORD:
@@ -528,7 +557,8 @@ class Basic09Interpreter:
                 else:
                     record_template[fname] = DEFAULT_VALUES[ftag]
 
-        for decl in group.children[:-1]:
+        decl_children = group.children[:-1] if has_type else group.children
+        for decl in decl_children:
             if not isinstance(decl, Tree):
                 continue
             name = str(decl.children[0]).upper()
@@ -563,38 +593,68 @@ class Basic09Interpreter:
         value = self._eval_expr(expr_node, env)
         self._assign_var(var_node, value, env)
 
+    def _parse_var_chain(self, var_node: Tree):
+        """Parse a var node into (root_name, root_idx_node, chain).
+
+        root_idx_node: array_index Tree if root is array-accessed, else None.
+        chain: list of (field_name: str, field_idx_node: Tree | None).
+        Indices are NOT evaluated — callers decide how to use them.
+        """
+        children = var_node.children
+        name = str(children[0]).upper()
+        rest = children[1:]
+        pos = 0
+
+        root_idx_node = None
+        if pos < len(rest) and isinstance(rest[pos], Tree) and rest[pos].data == "array_index":
+            root_idx_node = rest[pos]
+            pos += 1
+
+        chain: list[tuple[str, Tree | None]] = []
+        while pos < len(rest):
+            field = str(rest[pos]).upper()
+            pos += 1
+            fidx_node = None
+            if pos < len(rest) and isinstance(rest[pos], Tree) and rest[pos].data == "array_index":
+                fidx_node = rest[pos]
+                pos += 1
+            chain.append((field, fidx_node))
+
+        return name, root_idx_node, chain
+
     def _assign_var(self, var_node: Tree, value: B09Value, env: Environment) -> None:
-        name = str(var_node.children[0]).upper()
-        children = var_node.children[1:]
+        name, root_idx_node, chain = self._parse_var_chain(var_node)
 
-        if not children:
-            env.set(name, value)
-            return
-
-        c1 = children[0]
-        if isinstance(c1, Tree) and c1.data == "array_index":
-            # A(i)  or  A(i).field  or  A(i).field(n)
-            indices = tuple(self._eval_expr(e, env).as_int()
-                            for e in self._exprs_from_index(c1))
-            if len(children) == 1:
+        if not chain:
+            if root_idx_node is not None:
+                indices = tuple(self._eval_expr(e, env).as_int()
+                                for e in self._exprs_from_index(root_idx_node))
                 env.set_array(name, indices, value)
             else:
-                field = str(children[1]).upper()
-                record = env.get_array(name, indices)
-                if len(children) == 3:
-                    fidx = self._eval_expr(self._exprs_from_index(children[2])[0], env).as_int()
-                    record.value[field][fidx] = value
-                else:
-                    record.value[field] = value
+                env.set(name, value)
+            return
+
+        # Navigate to the record that owns the final field
+        if root_idx_node is not None:
+            indices = tuple(self._eval_expr(e, env).as_int()
+                            for e in self._exprs_from_index(root_idx_node))
+            current = env.get_array(name, indices)
         else:
-            # A.field  or  A.field(n)
-            field = str(c1).upper()
-            record = env.get(name)
-            if len(children) == 2:
-                fidx = self._eval_expr(self._exprs_from_index(children[1])[0], env).as_int()
-                record.value[field][fidx] = value
+            current = env.get(name)
+        for field, fidx_node in chain[:-1]:
+            inner = current.value[field]
+            if fidx_node is not None:
+                fidx = self._eval_expr(self._exprs_from_index(fidx_node)[0], env).as_int()
+                current = inner[fidx]
             else:
-                record.value[field] = value
+                current = inner
+
+        last_field, last_fidx_node = chain[-1]
+        if last_fidx_node is not None:
+            fidx = self._eval_expr(self._exprs_from_index(last_fidx_node)[0], env).as_int()
+            current.value[last_field][fidx] = value
+        else:
+            current.value[last_field] = value
 
     # ------------------------------------------------------------------ #
     # PRINT                                                                #
@@ -724,20 +784,29 @@ class Basic09Interpreter:
                  global_ctx: tuple | None = None) -> None:
         cond = self._eval_expr(stmt.children[0], env).as_bool()
         body_children = [c for c in stmt.children[1:] if isinstance(c, Tree)]
-        statement_lists = [c for c in body_children if c.data == "statement_list"]
 
-        then_stmts = []
-        else_stmts = []
-        if body_children and body_children[0].data == "statement_list":
-            then_stmts = body_children[0].children
-            if len(statement_lists) > 1:
-                else_stmts = statement_lists[1].children
-        else:
-            for child in body_children:
-                if child.data == "statement_list":
-                    then_stmts.extend(child.children)
-                else:
-                    then_stmts.append(child)
+        then_stmts: list = []
+        else_stmts: list = []
+
+        if len(body_children) == 1:
+            c = body_children[0]
+            then_stmts = c.children if c.data == "statement_list" else [c]
+        elif len(body_children) == 2:
+            c0, c1 = body_children
+            c0_sl = c0.data == "statement_list"
+            c1_sl = c1.data == "statement_list"
+            if c0_sl and c1_sl:
+                # THEN block, ELSE block
+                then_stmts, else_stmts = c0.children, c1.children
+            elif c0_sl:
+                # THEN block, ELSE inline statement
+                then_stmts, else_stmts = c0.children, [c1]
+            elif c1_sl:
+                # THEN inline + block continuation (no ELSE)
+                then_stmts = [c0] + list(c1.children)
+            else:
+                # THEN inline, ELSE inline
+                then_stmts, else_stmts = [c0], [c1]
 
         if cond:
             self._exec_statement_list(then_stmts, env,
@@ -888,7 +957,7 @@ class Basic09Interpreter:
         inline_params = []
         for child in proc.children[1:]:
             if isinstance(child, Tree) and child.data == "param_list":
-                inline_params = [c for c in child.children if isinstance(c, Tree) and c.data == "param"]
+                inline_params = [c for c in child.children if isinstance(c, Tree) and c.data == "param_group"]
                 break
 
         # Collect PARAM-statement params (BASIC09 style: PARAM a,b:INTEGER inside body)
@@ -908,11 +977,20 @@ class Basic09Interpreter:
 
         param_names: list[str] = []   # ordered list of param variable names
         if inline_params:
-            for param in inline_params:
-                pname = str(param.children[0]).upper()
-                ptag = self._parse_type(param.children[1])
-                local_env.declare(pname, ptag)
-                param_names.append(pname)
+            for group in inline_params:
+                type_node = group.children[-1]
+                ptag = self._parse_type(type_node)
+                for decl in group.children[:-1]:
+                    if not isinstance(decl, Tree):
+                        continue
+                    pname = str(decl.children[0]).upper()
+                    if len(decl.children) > 1:
+                        dims = [self._eval_expr(e, local_env).as_int()
+                                for e in self._exprs_from_list(decl.children[1])]
+                        local_env.declare_array(pname, dims, ptag)
+                    else:
+                        local_env.declare(pname, ptag)
+                    param_names.append(pname)
         else:
             # Walk the leading PARAM statements in the body (TYPE stmts may precede them)
             for node in self._flatten_stmts(body_stmts):
@@ -922,24 +1000,33 @@ class Basic09Interpreter:
                     continue  # skip type declarations before PARAM
                 if node.data != "param_stmt":
                     break
-                type_node = node.children[-1]
-                tag = self._parse_type(type_node)
-                record_template: dict | None = None
-                if tag == TypeTag.RECORD:
-                    type_name = str(type_node.children[0]).upper()
-                    fields = self._type_defs.get(type_name, [])
-                    from .types import DEFAULT_VALUES
-                    import copy as _copy
-                    record_template = {}
-                    for fname, ftag, fdim in fields:
-                        if fdim is not None:
-                            record_template[fname] = [DEFAULT_VALUES[ftag]] * (fdim + 1)
-                        else:
-                            record_template[fname] = DEFAULT_VALUES[ftag]
-                for child in node.children[:-1]:
-                    if isinstance(child, Token):
-                        pname = str(child).upper()
-                        if record_template is not None:
+                for group in node.children:
+                    if not isinstance(group, Tree) or group.data != "param_group":
+                        continue
+                    type_node = group.children[-1]
+                    tag = self._parse_type(type_node)
+                    record_template: dict | None = None
+                    if tag == TypeTag.RECORD:
+                        type_name = str(type_node.children[0]).upper()
+                        fields = self._type_defs.get(type_name, [])
+                        from .types import DEFAULT_VALUES
+                        import copy as _copy
+                        record_template = {}
+                        for fname, ftag, fdim in fields:
+                            if fdim is not None:
+                                record_template[fname] = [DEFAULT_VALUES[ftag]] * (fdim + 1)
+                            else:
+                                record_template[fname] = DEFAULT_VALUES[ftag]
+                    for decl in group.children[:-1]:
+                        if not isinstance(decl, Tree):
+                            continue
+                        pname = str(decl.children[0]).upper()
+                        if len(decl.children) > 1:
+                            dims = [self._eval_expr(e, local_env).as_int()
+                                    for e in self._exprs_from_list(decl.children[1])]
+                            local_env.declare_array(pname, dims, tag,
+                                                    record_template=record_template)
+                        elif record_template is not None:
                             import copy as _copy
                             local_env.declare_record(pname, _copy.deepcopy(record_template))
                         else:
@@ -1025,6 +1112,8 @@ class Basic09Interpreter:
         # Literals
         if name == "int_lit":
             return B09Value.integer(int(node.children[0]))
+        if name == "hex_lit":
+            return B09Value.integer(int(str(node.children[0])[1:], 16))
         if name == "float_lit":
             return B09Value.real(float(node.children[0]))
         if name == "string_lit":
@@ -1044,35 +1133,32 @@ class Basic09Interpreter:
             if vname == "DATE$" and len(node.children) == 1:
                 return B09Value.string(datetime.now().strftime("%m/%d/%y %H:%M:%S"))
 
-            children = node.children[1:]
+            name2, root_idx_node, chain = self._parse_var_chain(node)
 
-            if not children:
-                return env.get(vname)
+            # Built-in called as array: SIN(x), INT(x), etc.
+            if not chain and root_idx_node is not None and name2 in _BUILTINS:
+                args = [self._eval_expr(e, env)
+                        for e in self._exprs_from_index(root_idx_node)]
+                return _BUILTINS[name2](*args)
 
-            c1 = children[0]
-            if isinstance(c1, Tree) and c1.data == "array_index":
-                # A(i)  or  A(i).field  or  A(i).field(n)
-                exprs = self._exprs_from_index(c1)
-                if vname in _BUILTINS and len(children) == 1:
-                    args = [self._eval_expr(e, env) for e in exprs]
-                    return _BUILTINS[vname](*args)
-                indices = tuple(self._eval_expr(e, env).as_int() for e in exprs)
-                if len(children) == 1:
-                    return env.get_array(vname, indices)
-                field = str(children[1]).upper()
-                record = env.get_array(vname, indices)
-                if len(children) == 3:
-                    fidx = self._eval_expr(self._exprs_from_index(children[2])[0], env).as_int()
-                    return record.value[field][fidx]
-                return record.value[field]
+            # Get root value
+            if root_idx_node is not None:
+                indices = tuple(self._eval_expr(e, env).as_int()
+                                for e in self._exprs_from_index(root_idx_node))
+                current = env.get_array(name2, indices)
             else:
-                # A.field  or  A.field(n)
-                field = str(c1).upper()
-                record = env.get(vname)
-                if len(children) == 2:
-                    fidx = self._eval_expr(self._exprs_from_index(children[1])[0], env).as_int()
-                    return record.value[field][fidx]
-                return record.value[field]
+                current = env.get(name2)
+
+            # Navigate field chain
+            for field, fidx_node in chain:
+                inner = current.value[field]
+                if fidx_node is not None:
+                    fidx = self._eval_expr(self._exprs_from_index(fidx_node)[0], env).as_int()
+                    current = inner[fidx]
+                else:
+                    current = inner
+
+            return current
 
         # Function call
         if name == "func_call":
