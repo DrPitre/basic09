@@ -44,7 +44,7 @@ def _strip_comments(source: str) -> str:
                 out.append('\n')   # statement separator
                 i += 1
             else:
-                out.append(c)
+                out.append(c if in_str else c.upper())
                 i += 1
         result.append(''.join(out))
     return ''.join(result)
