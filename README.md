@@ -110,22 +110,29 @@ END
 python -m pytest
 ```
 
-The test suite runs 32 procedures from `tests/unittest.b09` through the interpreter and asserts no `FAIL` lines appear in the output.
+There are two test suites:
+
+- **Unit tests** (`tests/test_interpreter.py`): runs 42 BASIC09 test procedures from `tests/unittests` through the interpreter. Each procedure receives `passed` and `failed` counters by reference and the test asserts no `FAIL` lines appear in the output.
+- **Wiki samples** (`tests/test_wiki_samples.py`): parses and runs 110 procedures from `tests/wiki_procs/` drawn from the BASIC09 Command Reference wiki. Procedures that rely on unsupported OS-9 features (file I/O, `SHELL`, `CHAIN`, `ADDR`/`PEEK`/`POKE`, etc.) are skipped; parse or runtime failures from known wiki artifacts are marked `xfail`. Regenerate with `python scripts/generate_wiki_tests.py`.
 
 ## Project layout
 
 ```
 basic09/
-  __init__.py       public API
-  grammar.lark      Lark Earley grammar
-  interpreter.py    tree-walking interpreter
-  types.py          B9Value / TypeTag
-  environment.py    scoped variable storage
-examples/           sample .b09 programs
+  __init__.py          public API
+  grammar.lark         Lark Earley grammar
+  interpreter.py       tree-walking interpreter
+  types.py             B9Value / TypeTag
+  environment.py       scoped variable storage
+examples/              sample .b09 programs
+scripts/
+  generate_wiki_tests.py  regenerate wiki test fixtures
 tests/
-  unittest.b09      BASIC09-language unit tests
-  test_interpreter.py  pytest driver
-main.py             CLI entry point
+  unittests            BASIC09-language unit test source
+  wiki_procs/          wiki sample procedures (.b09 files)
+  test_interpreter.py  pytest driver for unit tests
+  test_wiki_samples.py pytest driver for wiki samples
+main.py                CLI entry point
 requirements.txt
 ```
 
