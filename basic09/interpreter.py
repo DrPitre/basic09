@@ -9,7 +9,7 @@ from typing import Any, Optional
 from lark import Lark, Tree, Token
 from lark.visitors import Interpreter as LarkInterpreter
 
-from .types import B9Value, TypeTag, coerce
+from .types import B09Value, TypeTag, coerce
 from .environment import Environment, Basic09Error, UndefinedVariable, TypeMismatch
 
 
@@ -81,7 +81,7 @@ class _Gosub(_Goto):
 
 _rnd_last: float = 0.0
 
-def _rnd(a: B9Value) -> B9Value:
+def _rnd(a: B09Value) -> B09Value:
     global _rnd_last
     n = a.as_float()
     if n < 0:
@@ -91,42 +91,42 @@ def _rnd(a: B9Value) -> B9Value:
         pass  # return last value unchanged
     else:
         _rnd_last = _random.random() * n
-    return B9Value.real(_rnd_last)
+    return B09Value.real(_rnd_last)
 
 
 _BUILTINS: dict[str, Any] = {
-    "ABS":    lambda a: B9Value.real(abs(a.as_float())) if a.tag == TypeTag.REAL else B9Value.integer(abs(a.as_int())),
-    "INT":    lambda a: B9Value.integer(int(a.as_float())),
-    "FIX":    lambda a: B9Value.integer(round(a.as_float())),
-    "FLOAT":  lambda a: B9Value.real(float(a.as_float())),
-    "SQR":    lambda a: B9Value.real(math.sqrt(a.as_float())),
-    "SQ":     lambda a: B9Value.real(a.as_float() ** 2),
-    "SIN":    lambda a: B9Value.real(math.sin(a.as_float())),
-    "COS":    lambda a: B9Value.real(math.cos(a.as_float())),
-    "TAN":    lambda a: B9Value.real(math.tan(a.as_float())),
-    "ATN":    lambda a: B9Value.real(math.atan(a.as_float())),
-    "ACS":    lambda a: B9Value.real(math.acos(a.as_float())),
-    "ASN":    lambda a: B9Value.real(math.asin(a.as_float())),
-    "EXP":    lambda a: B9Value.real(math.exp(a.as_float())),
-    "LOG":    lambda a: B9Value.real(math.log(a.as_float())),
-    "SGN":    lambda a: B9Value.integer(int(math.copysign(1, a.as_float())) if a.value != 0 else 0),
+    "ABS":    lambda a: B09Value.real(abs(a.as_float())) if a.tag == TypeTag.REAL else B09Value.integer(abs(a.as_int())),
+    "INT":    lambda a: B09Value.integer(int(a.as_float())),
+    "FIX":    lambda a: B09Value.integer(round(a.as_float())),
+    "FLOAT":  lambda a: B09Value.real(float(a.as_float())),
+    "SQR":    lambda a: B09Value.real(math.sqrt(a.as_float())),
+    "SQ":     lambda a: B09Value.real(a.as_float() ** 2),
+    "SIN":    lambda a: B09Value.real(math.sin(a.as_float())),
+    "COS":    lambda a: B09Value.real(math.cos(a.as_float())),
+    "TAN":    lambda a: B09Value.real(math.tan(a.as_float())),
+    "ATN":    lambda a: B09Value.real(math.atan(a.as_float())),
+    "ACS":    lambda a: B09Value.real(math.acos(a.as_float())),
+    "ASN":    lambda a: B09Value.real(math.asin(a.as_float())),
+    "EXP":    lambda a: B09Value.real(math.exp(a.as_float())),
+    "LOG":    lambda a: B09Value.real(math.log(a.as_float())),
+    "SGN":    lambda a: B09Value.integer(int(math.copysign(1, a.as_float())) if a.value != 0 else 0),
     "RND":    _rnd,
-    "LEN":    lambda a: B9Value.integer(len(a.as_str())),
-    "ASC":    lambda a: B9Value.integer(ord(a.as_str()[0])),
-    "CHR$":   lambda a: B9Value.string(chr(a.as_int())),
-    "STR$":   lambda a: B9Value.string(str(a)),
-    "VAL":    lambda a: B9Value.real(float(a.as_str())),
-    "LEFT$":  lambda a, b: B9Value.string(a.as_str()[:b.as_int()]),
-    "RIGHT$": lambda a, b: B9Value.string(a.as_str()[-b.as_int():] if b.as_int() else ""),
-    "MID$":   lambda a, b, *rest: B9Value.string(
+    "LEN":    lambda a: B09Value.integer(len(a.as_str())),
+    "ASC":    lambda a: B09Value.integer(ord(a.as_str()[0])),
+    "CHR$":   lambda a: B09Value.string(chr(a.as_int())),
+    "STR$":   lambda a: B09Value.string(str(a)),
+    "VAL":    lambda a: B09Value.real(float(a.as_str())),
+    "LEFT$":  lambda a, b: B09Value.string(a.as_str()[:b.as_int()]),
+    "RIGHT$": lambda a, b: B09Value.string(a.as_str()[-b.as_int():] if b.as_int() else ""),
+    "MID$":   lambda a, b, *rest: B09Value.string(
         a.as_str()[b.as_int()-1 : b.as_int()-1 + (rest[0].as_int() if rest else len(a.as_str()))]
     ),
-    "MOD":    lambda a, b: B9Value.integer(a.as_int() % b.as_int()),
-    "SUBSTR": lambda a, b: B9Value.integer(b.as_str().find(a.as_str()) + 1 if a.as_str() in b.as_str() else 0),
-    "LAND":   lambda a, b: B9Value.integer(a.as_int() & b.as_int()),
-    "LOR":    lambda a, b: B9Value.integer(a.as_int() | b.as_int()),
-    "LXOR":   lambda a, b: B9Value.integer(a.as_int() ^ b.as_int()),
-    "LNOT":   lambda a: B9Value.integer(~a.as_int() & 0xFFFF),
+    "MOD":    lambda a, b: B09Value.integer(a.as_int() % b.as_int()),
+    "SUBSTR": lambda a, b: B09Value.integer(b.as_str().find(a.as_str()) + 1 if a.as_str() in b.as_str() else 0),
+    "LAND":   lambda a, b: B09Value.integer(a.as_int() & b.as_int()),
+    "LOR":    lambda a, b: B09Value.integer(a.as_int() | b.as_int()),
+    "LXOR":   lambda a, b: B09Value.integer(a.as_int() ^ b.as_int()),
+    "LNOT":   lambda a: B09Value.integer(~a.as_int() & 0xFFFF),
 }
 
 
@@ -203,7 +203,7 @@ class Basic09Interpreter:
         self.debug = debug
         self._procedures: dict[str, Tree] = {}
         self._type_defs: dict[str, list[tuple[str, TypeTag]]] = {}
-        self._data: list[B9Value] = []
+        self._data: list[B09Value] = []
         self._data_ptr: int = 0
         self._env = Environment()
         self._global_stmts: list = []
@@ -259,7 +259,7 @@ class Basic09Interpreter:
             except (_Return, _End, _Stop):
                 pass
 
-    def run_procedure(self, name: str, args: list[B9Value] | None = None) -> None:
+    def run_procedure(self, name: str, args: list[B09Value] | None = None) -> None:
         proc = self._procedures.get(name.upper())
         if proc is None:
             raise Basic09Error(f"Procedure '{name}' not found")
@@ -534,7 +534,7 @@ class Basic09Interpreter:
         value = self._eval_expr(expr_node, env)
         self._assign_var(var_node, value, env)
 
-    def _assign_var(self, var_node: Tree, value: B9Value, env: Environment) -> None:
+    def _assign_var(self, var_node: Tree, value: B09Value, env: Environment) -> None:
         name = str(var_node.children[0]).upper()
         children = var_node.children[1:]
 
@@ -667,16 +667,16 @@ class Basic09Interpreter:
                 existing = env.get(name)
                 if existing.tag in (TypeTag.INTEGER, TypeTag.BYTE):
                     try:
-                        value = B9Value.integer(int(float(raw)))
+                        value = B09Value.integer(int(float(raw)))
                     except ValueError:
-                        value = B9Value.integer(0)
+                        value = B09Value.integer(0)
                 elif existing.tag == TypeTag.REAL:
                     try:
-                        value = B9Value.real(float(raw))
+                        value = B09Value.real(float(raw))
                     except ValueError:
-                        value = B9Value.real(0.0)
+                        value = B09Value.real(0.0)
                 else:
-                    value = B9Value.string(raw)
+                    value = B09Value.string(raw)
                 env.set(name, value)
 
     # ------------------------------------------------------------------ #
@@ -728,7 +728,7 @@ class Basic09Interpreter:
 
         start_val = self._eval_expr(tree_children[0], env)
         stop_val  = self._eval_expr(tree_children[1], env)
-        step_val  = self._eval_expr(tree_children[2], env) if body_idx > 2 else B9Value.integer(1)
+        step_val  = self._eval_expr(tree_children[2], env) if body_idx > 2 else B09Value.integer(1)
         body_stmts = tree_children[body_idx].children
 
         env.set(var_name, start_val)
@@ -747,9 +747,9 @@ class Basic09Interpreter:
                                           _global_ctx=global_ctx)
                 new_val = env.get(var_name).as_float() + step
                 if env.get(var_name).tag == TypeTag.INTEGER:
-                    env.set(var_name, B9Value.integer(int(new_val)))
+                    env.set(var_name, B09Value.integer(int(new_val)))
                 else:
-                    env.set(var_name, B9Value.real(new_val))
+                    env.set(var_name, B09Value.real(new_val))
         except _Exit:
             pass
 
@@ -834,7 +834,7 @@ class Basic09Interpreter:
     def _exec_run(self, stmt: Tree, env: Environment) -> None:
         name = str(stmt.children[0]).upper()
         arg_exprs: list[Tree] = []
-        args: list[B9Value] = []
+        args: list[B09Value] = []
         for child in stmt.children[1:]:
             if isinstance(child, Tree) and child.data == "expr_list":
                 arg_exprs = [e for e in child.children if isinstance(e, Tree)]
@@ -844,7 +844,7 @@ class Basic09Interpreter:
             raise Basic09Error(f"Procedure '{name}' not defined")
         self._call_procedure(proc, args, env, arg_exprs)
 
-    def _call_procedure(self, proc: Tree, args: list[B9Value], caller_env: Environment,
+    def _call_procedure(self, proc: Tree, args: list[B09Value], caller_env: Environment,
                         arg_exprs: list[Tree] | None = None) -> None:
         local_env = Environment(parent=None)
 
@@ -961,27 +961,27 @@ class Basic09Interpreter:
     # Expression evaluation                                                #
     # ------------------------------------------------------------------ #
 
-    def _eval_expr(self, node: Any, env: Environment) -> B9Value:
+    def _eval_expr(self, node: Any, env: Environment) -> B09Value:
         if isinstance(node, Token):
-            return B9Value.string(str(node))
+            return B09Value.string(str(node))
         if not isinstance(node, Tree):
-            return B9Value.integer(0)
+            return B09Value.integer(0)
 
         name = node.data
 
         # Literals
         if name == "int_lit":
-            return B9Value.integer(int(node.children[0]))
+            return B09Value.integer(int(node.children[0]))
         if name == "float_lit":
-            return B9Value.real(float(node.children[0]))
+            return B09Value.real(float(node.children[0]))
         if name == "string_lit":
-            return B9Value.string(str(node.children[0])[1:-1])
+            return B09Value.string(str(node.children[0])[1:-1])
         if name == "true_lit":
-            return B9Value.boolean(True)
+            return B09Value.boolean(True)
         if name == "false_lit":
-            return B9Value.boolean(False)
+            return B09Value.boolean(False)
         if name == "pi_lit":
-            return B9Value.real(math.pi)
+            return B09Value.real(math.pi)
 
         # Variable
         if name == "var":
@@ -989,7 +989,7 @@ class Basic09Interpreter:
 
             # DATE$ system variable — OS-9 format "MM/DD/YY HH:MM:SS"
             if vname == "DATE$" and len(node.children) == 1:
-                return B9Value.string(datetime.now().strftime("%m/%d/%y %H:%M:%S"))
+                return B09Value.string(datetime.now().strftime("%m/%d/%y %H:%M:%S"))
 
             children = node.children[1:]
 
@@ -1024,7 +1024,7 @@ class Basic09Interpreter:
         # Function call
         if name == "func_call":
             fname = str(node.children[0]).upper()
-            args: list[B9Value] = []
+            args: list[B09Value] = []
             if len(node.children) > 1 and isinstance(node.children[1], Tree):
                 args = self._exprs_from_list(node.children[1])
                 args = [self._eval_expr(e, env) for e in args]
@@ -1039,16 +1039,16 @@ class Basic09Interpreter:
             "sub_op":  lambda a, b: self._arith(a, b, "-"),
             "mul_op":  lambda a, b: self._arith(a, b, "*"),
             "div_op":  lambda a, b: self._arith(a, b, "/"),
-            "pow_op":  lambda a, b: B9Value.real(a.as_float() ** b.as_float()),
-            "eq_op":   lambda a, b: B9Value.boolean(self._compare(a, b) == 0),
-            "ne_op":   lambda a, b: B9Value.boolean(self._compare(a, b) != 0),
-            "lt_op":   lambda a, b: B9Value.boolean(self._compare(a, b) < 0),
-            "le_op":   lambda a, b: B9Value.boolean(self._compare(a, b) <= 0),
-            "gt_op":   lambda a, b: B9Value.boolean(self._compare(a, b) > 0),
-            "ge_op":   lambda a, b: B9Value.boolean(self._compare(a, b) >= 0),
-            "and_op":  lambda a, b: B9Value.boolean(a.as_bool() and b.as_bool()),
-            "or_op":   lambda a, b: B9Value.boolean(a.as_bool() or b.as_bool()),
-            "xor_op":  lambda a, b: B9Value.boolean(a.as_bool() != b.as_bool()),
+            "pow_op":  lambda a, b: B09Value.real(a.as_float() ** b.as_float()),
+            "eq_op":   lambda a, b: B09Value.boolean(self._compare(a, b) == 0),
+            "ne_op":   lambda a, b: B09Value.boolean(self._compare(a, b) != 0),
+            "lt_op":   lambda a, b: B09Value.boolean(self._compare(a, b) < 0),
+            "le_op":   lambda a, b: B09Value.boolean(self._compare(a, b) <= 0),
+            "gt_op":   lambda a, b: B09Value.boolean(self._compare(a, b) > 0),
+            "ge_op":   lambda a, b: B09Value.boolean(self._compare(a, b) >= 0),
+            "and_op":  lambda a, b: B09Value.boolean(a.as_bool() and b.as_bool()),
+            "or_op":   lambda a, b: B09Value.boolean(a.as_bool() or b.as_bool()),
+            "xor_op":  lambda a, b: B09Value.boolean(a.as_bool() != b.as_bool()),
         }
         if name in ops:
             a = self._eval_expr(node.children[0], env)
@@ -1058,31 +1058,31 @@ class Basic09Interpreter:
         if name == "neg_op":
             a = self._eval_expr(node.children[0], env)
             if a.tag == TypeTag.REAL:
-                return B9Value.real(-a.value)
-            return B9Value.integer(-a.as_int())
+                return B09Value.real(-a.value)
+            return B09Value.integer(-a.as_int())
 
         if name == "not_op":
-            return B9Value.boolean(not self._eval_expr(node.children[0], env).as_bool())
+            return B09Value.boolean(not self._eval_expr(node.children[0], env).as_bool())
 
         # Fallthrough: try first child
         if node.children:
             return self._eval_expr(node.children[0], env)
-        return B9Value.integer(0)
+        return B09Value.integer(0)
 
-    def _arith(self, a: B9Value, b: B9Value, op: str) -> B9Value:
+    def _arith(self, a: B09Value, b: B09Value, op: str) -> B09Value:
         # String concatenation
         if op == "+" and a.tag == TypeTag.STRING:
-            return B9Value.string(a.as_str() + b.as_str())
+            return B09Value.string(a.as_str() + b.as_str())
         a, b = coerce(a, b)
         if a.tag == TypeTag.REAL:
             v = eval(f"{a.value} {op} {b.value}")  # safe: only numeric operands  # noqa: S307
-            return B9Value.real(v)
+            return B09Value.real(v)
         if op == "/":
-            return B9Value.real(a.as_int() / b.as_int())
+            return B09Value.real(a.as_int() / b.as_int())
         v = eval(f"{a.as_int()} {op} {b.as_int()}")  # noqa: S307
-        return B9Value.integer(int(v))
+        return B09Value.integer(int(v))
 
-    def _compare(self, a: B9Value, b: B9Value) -> int:
+    def _compare(self, a: B09Value, b: B09Value) -> int:
         if a.tag == TypeTag.STRING:
             sa, sb = a.as_str(), b.as_str()
             return (sa > sb) - (sa < sb)
@@ -1093,7 +1093,7 @@ class Basic09Interpreter:
         fa, fb = a.as_float(), b.as_float()
         return (fa > fb) - (fa < fb)
 
-    def _eval_literal(self, node: Any) -> B9Value:
+    def _eval_literal(self, node: Any) -> B09Value:
         return self._eval_expr(node, self._env)
 
     def _exprs_from_index(self, array_index: Tree) -> list[Tree]:

@@ -48,7 +48,7 @@ Type BASIC09 statements, then `RUN` to execute. `NEW` clears the buffer, `LIST` 
 ### Python API
 
 ```python
-from basic09 import Basic09Interpreter
+from basic09 import Basic09Interpreter, B09Value
 
 source = """
 PROCEDURE greet
@@ -58,8 +58,18 @@ END
 """
 
 interp = Basic09Interpreter(source)
-interp.run_procedure("greet", [interp._env.__class__])  # or pass B9Value args
+interp.run_procedure("greet", [B09Value.string("World")])
 ```
+
+`run_procedure` accepts a list of `B09Value` arguments matching the procedure's `PARAM` declarations. Use the appropriate constructor for each type:
+
+| BASIC09 type | Python constructor |
+|---|---|
+| `INTEGER` | `B09Value.integer(42)` |
+| `REAL` | `B09Value.real(3.14)` |
+| `STRING[n]` | `B09Value.string("hello")` |
+| `BOOLEAN` | `B09Value.boolean(True)` |
+| `BYTE` | `B09Value.byte(0xFF)` |
 
 ## Language overview
 
@@ -122,7 +132,7 @@ basic09/
   __init__.py          public API
   grammar.lark         Lark Earley grammar
   interpreter.py       tree-walking interpreter
-  types.py             B9Value / TypeTag
+  types.py             B09Value / TypeTag
   environment.py       scoped variable storage
 examples/              sample .b09 programs
 scripts/

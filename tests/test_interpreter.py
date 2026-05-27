@@ -88,9 +88,9 @@ def _run_procedure(interp, name):
     """Run a single BASIC09 test procedure and return its output lines."""
     buf = StringIO()
     with redirect_stdout(buf):
-        from basic09.types import B9Value
-        passed = B9Value.integer(0)
-        failed = B9Value.integer(0)
+        from basic09.types import B09Value
+        passed = B09Value.integer(0)
+        failed = B09Value.integer(0)
         interp.run_procedure(name, [passed, failed])
     return buf.getvalue().splitlines()
 
@@ -98,11 +98,11 @@ def _run_procedure(interp, name):
 @pytest.mark.parametrize("proc_name", _PROCEDURE_NAMES)
 def test_procedure(b09_interp, proc_name):
     """Each BASIC09 test procedure should produce only PASS lines."""
-    from basic09.types import B9Value
+    from basic09.types import B09Value
     buf = StringIO()
     with redirect_stdout(buf):
-        passed = B9Value.integer(0)
-        failed = B9Value.integer(0)
+        passed = B09Value.integer(0)
+        failed = B09Value.integer(0)
         b09_interp.run_procedure(proc_name, [passed, failed])
     output = buf.getvalue()
     fail_lines = [l for l in output.splitlines() if l.startswith("FAIL")]

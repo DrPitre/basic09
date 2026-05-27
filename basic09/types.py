@@ -14,34 +14,34 @@ class TypeTag(Enum):
 
 
 @dataclass
-class B9Value:
+class B09Value:
     tag: TypeTag
     value: Union[int, float, str, bool, dict]
 
     # Convenience constructors
     @staticmethod
-    def integer(v: int) -> "B9Value":
-        return B9Value(TypeTag.INTEGER, int(v))
+    def integer(v: int) -> "B09Value":
+        return B09Value(TypeTag.INTEGER, int(v))
 
     @staticmethod
-    def real(v: float) -> "B9Value":
-        return B9Value(TypeTag.REAL, float(v))
+    def real(v: float) -> "B09Value":
+        return B09Value(TypeTag.REAL, float(v))
 
     @staticmethod
-    def string(v: str) -> "B9Value":
-        return B9Value(TypeTag.STRING, str(v))
+    def string(v: str) -> "B09Value":
+        return B09Value(TypeTag.STRING, str(v))
 
     @staticmethod
-    def boolean(v: bool) -> "B9Value":
-        return B9Value(TypeTag.BOOLEAN, bool(v))
+    def boolean(v: bool) -> "B09Value":
+        return B09Value(TypeTag.BOOLEAN, bool(v))
 
     @staticmethod
-    def byte(v: int) -> "B9Value":
-        return B9Value(TypeTag.BYTE, int(v) & 0xFF)
+    def byte(v: int) -> "B09Value":
+        return B09Value(TypeTag.BYTE, int(v) & 0xFF)
 
     @staticmethod
-    def record(fields: dict) -> "B9Value":
-        return B9Value(TypeTag.RECORD, fields)
+    def record(fields: dict) -> "B09Value":
+        return B09Value(TypeTag.RECORD, fields)
 
     def is_numeric(self) -> bool:
         return self.tag in (TypeTag.INTEGER, TypeTag.REAL, TypeTag.BYTE)
@@ -82,20 +82,20 @@ class B9Value:
         return str(self.value)
 
 
-def coerce(a: B9Value, b: B9Value) -> tuple[B9Value, B9Value]:
+def coerce(a: B09Value, b: B09Value) -> tuple[B09Value, B09Value]:
     """Promote INTEGER to REAL when one operand is REAL."""
     if a.tag == TypeTag.REAL and b.tag == TypeTag.INTEGER:
-        return a, B9Value.real(float(b.value))
+        return a, B09Value.real(float(b.value))
     if a.tag == TypeTag.INTEGER and b.tag == TypeTag.REAL:
-        return B9Value.real(float(a.value)), b
+        return B09Value.real(float(a.value)), b
     return a, b
 
 
-DEFAULT_VALUES: dict[TypeTag, B9Value] = {
-    TypeTag.INTEGER: B9Value.integer(0),
-    TypeTag.REAL: B9Value.real(0.0),
-    TypeTag.STRING: B9Value.string(""),
-    TypeTag.BOOLEAN: B9Value.boolean(False),
-    TypeTag.BYTE: B9Value.byte(0),
-    TypeTag.RECORD: B9Value.record({}),
+DEFAULT_VALUES: dict[TypeTag, B09Value] = {
+    TypeTag.INTEGER: B09Value.integer(0),
+    TypeTag.REAL: B09Value.real(0.0),
+    TypeTag.STRING: B09Value.string(""),
+    TypeTag.BOOLEAN: B09Value.boolean(False),
+    TypeTag.BYTE: B09Value.byte(0),
+    TypeTag.RECORD: B09Value.record({}),
 }

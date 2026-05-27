@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Any, Optional
-from .types import B9Value, TypeTag, DEFAULT_VALUES
+from .types import B09Value, TypeTag, DEFAULT_VALUES
 
 
 class Basic09Error(Exception):
@@ -19,8 +19,8 @@ class Environment:
     """One scope frame (program level or procedure level)."""
 
     def __init__(self, parent: Optional["Environment"] = None):
-        self._vars: dict[str, B9Value] = {}
-        self._arrays: dict[str, dict[tuple, B9Value]] = {}
+        self._vars: dict[str, B09Value] = {}
+        self._arrays: dict[str, dict[tuple, B09Value]] = {}
         self._types: dict[str, TypeTag] = {}
         self._array_dims: dict[str, list[int]] = {}
         self._record_templates: dict[str, dict] = {}  # name → field defaults for arrays of records
@@ -44,24 +44,24 @@ class Environment:
 
     def declare_record(self, name: str, fields: dict) -> None:
         self._types[name] = TypeTag.RECORD
-        self._vars[name] = B9Value.record(fields)
+        self._vars[name] = B09Value.record(fields)
 
     # ------------------------------------------------------------------ #
     # Scalar get / set                                                     #
     # ------------------------------------------------------------------ #
 
-    def get(self, name: str) -> B9Value:
+    def get(self, name: str) -> B09Value:
         if name in self._vars:
             return self._vars[name]
         if self.parent:
             return self.parent.get(name)
         # Auto-initialize: string variables default to "", numerics to 0
-        default = B9Value.string("") if name.endswith("$") else B9Value.integer(0)
+        default = B09Value.string("") if name.endswith("$") else B09Value.integer(0)
         self._vars[name] = default
         self._types[name] = default.tag
         return default
 
-    def set(self, name: str, value: B9Value) -> None:
+    def set(self, name: str, value: B09Value) -> None:
         if name in self._vars:
             expected = self._types[name]
             value = _cast(value, expected, name)
@@ -81,13 +81,13 @@ class Environment:
     # Array get / set                                                      #
     # ------------------------------------------------------------------ #
 
-    def get_array(self, name: str, indices: tuple) -> B9Value:
+    def get_array(self, name: str, indices: tuple) -> B09Value:
         if name in self._arrays:
             tag = self._types[name]
             if indices not in self._arrays[name]:
                 if tag == TypeTag.RECORD and name in self._record_templates:
                     import copy
-                    val = B9Value.record(copy.deepcopy(self._record_templates[name]))
+                    val = B09Value.record(copy.deepcopy(self._record_templates[name]))
                     self._arrays[name][indices] = val
                     return val
                 return DEFAULT_VALUES[tag]
@@ -96,7 +96,7 @@ class Environment:
             return self.parent.get_array(name, indices)
         raise UndefinedVariable(f"Array '{name}' not defined")
 
-    def set_array(self, name: str, indices: tuple, value: B9Value) -> None:
+    def set_array(self, name: str, indices: tuple, value: B09Value) -> None:
         if name in self._arrays:
             tag = self._types[name]
             self._arrays[name][indices] = _cast(value, tag, name)
@@ -107,18 +107,18 @@ class Environment:
         raise UndefinedVariable(f"Array '{name}' not defined")
 
 
-def _cast(value: B9Value, target: TypeTag, name: str) -> B9Value:
+def _cast(value: B09Value, target: TypeTag, name: str) -> B09Value:
     if value.tag == target:
         return value
     if target == TypeTag.RECORD:
         return value  # accept any record assignment
     # Allowed coercions
     if target == TypeTag.REAL and value.tag == TypeTag.INTEGER:
-        return B9Value.real(float(value.value))
+        return B09Value.real(float(value.value))
     if target == TypeTag.INTEGER and value.tag == TypeTag.REAL:
-        return B9Value.integer(int(value.value))
+        return B09Value.integer(int(value.value))
     if target == TypeTag.BYTE and value.tag == TypeTag.INTEGER:
-        return B9Value.byte(value.value)
+        return B09Value.byte(value.value)
     raise TypeMismatch(
         f"Cannot assign {value.tag.name} to '{name}' (declared {target.name})"
     )
