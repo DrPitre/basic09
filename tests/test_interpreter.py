@@ -1,6 +1,7 @@
 """Tests for the Basic09 interpreter, driven by unittest.b09."""
 import os
 import sys
+from pathlib import Path
 from contextlib import redirect_stdout
 from io import StringIO
 
@@ -8,7 +9,11 @@ import pytest
 
 from basic09 import Basic09Interpreter
 
-UNITTEST_B09 = os.path.join(os.path.dirname(__file__), "unittests")
+_NITROS9DIR = os.environ.get("NITROS9DIR", str(Path.home() / "Projects/coco-shelf/nitros9"))
+UNITTEST_B09 = os.path.join(
+    _NITROS9DIR,
+    "3rdparty/packages/basic09/tests/unittests.b09",
+)
 
 _PROCEDURE_NAMES = [
     "testIntegerArithmetic",
