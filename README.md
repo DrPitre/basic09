@@ -20,6 +20,9 @@ BASIC09 differs from most BASICs of its era by supporting structured control flo
 - String: `LEN`, `LEFT$`, `RIGHT$`, `MID$`, `SUBSTR$`, `ASC`, `CHR$`, `STR$`, `VAL`, `INSTR`
 - Logical operators: `AND`, `OR`, `NOT`, `XOR`
 - Line and block comments (`//`, `REM`, `(* ... *)`)
+- File I/O: `OPEN`, `CREATE`, `CLOSE`, `DELETE`, `READ #`, `WRITE #`, `GET #`, `PUT #`, `SEEK`, `EOF`
+- `SHELL` to run host OS commands, `CHD` to change directory (`CHX` is a no-op)
+- `\` statement separator (multiple statements on one line)
 
 ## Installation
 
@@ -116,14 +119,20 @@ END
 
 ## Running the tests
 
+The BASIC09 test source files live in the [NitrOS-9 repository](https://github.com/nitros9project/nitros9) under `3rdparty/packages/basic09/tests/`. Set `NITROS9DIR` to the root of your NitrOS-9 checkout before running:
+
 ```bash
+export NITROS9DIR=~/Projects/coco-shelf/nitros9
 python -m pytest
 ```
 
-There are two test suites:
+If `NITROS9DIR` is not set it defaults to `~/Projects/coco-shelf/nitros9`.
 
-- **Unit tests** (`tests/test_interpreter.py`): runs 42 BASIC09 test procedures from `tests/unittests` through the interpreter. Each procedure receives `passed` and `failed` counters by reference and the test asserts no `FAIL` lines appear in the output.
-- **Wiki samples** (`tests/test_wiki_samples.py`): parses and runs 110 procedures from `tests/wiki_procs/` drawn from the BASIC09 Command Reference wiki. Procedures that rely on unsupported OS-9 features (file I/O, `SHELL`, `CHAIN`, `ADDR`/`PEEK`/`POKE`, etc.) are skipped; parse or runtime failures from known wiki artifacts are marked `xfail`. Regenerate with `python scripts/generate_wiki_tests.py`.
+There are three test suites:
+
+- **Unit tests** (`tests/test_interpreter.py`): runs 42 BASIC09 test procedures from `$NITROS9DIR/3rdparty/packages/basic09/tests/unittests.b09`. Each procedure receives `passed` and `failed` counters by reference and the test asserts no `FAIL` lines appear in the output.
+- **Wiki samples** (`tests/test_wiki_samples.py`): parses and runs 110 procedures from `$NITROS9DIR/3rdparty/packages/basic09/tests/wiki_procs/` drawn from the BASIC09 Command Reference wiki. Procedures that rely on unsupported OS-9 features (`SHELL`, `CHAIN`, `ADDR`/`PEEK`/`POKE`, etc.) are skipped. Regenerate with `python scripts/generate_wiki_tests.py`.
+- **External files** (`tests/test_external_b09.py`): pass `--b09-dir` to run all `.b09` files in any directory through the interpreter, e.g. `pytest --b09-dir $NITROS9DIR/3rdparty/packages/basic09/samples`.
 
 ## Project layout
 
@@ -134,17 +143,19 @@ basic09/
   interpreter.py       tree-walking interpreter
   types.py             B09Value / TypeTag
   environment.py       scoped variable storage
-examples/              sample .b09 programs
 scripts/
   generate_wiki_tests.py  regenerate wiki test fixtures
 tests/
-  unittests            BASIC09-language unit test source
-  wiki_procs/          wiki sample procedures (.b09 files)
+  conftest.py          pytest fixtures and --b09-dir option
   test_interpreter.py  pytest driver for unit tests
   test_wiki_samples.py pytest driver for wiki samples
+  test_shell_chd.py    tests for SHELL, CHD, CHX
+  test_external_b09.py pytest driver for external .b09 files
 main.py                CLI entry point
 requirements.txt
 ```
+
+BASIC09 test sources (`unittests.b09`, `wiki_procs/`, sample programs) live in the NitrOS-9 repo under `3rdparty/packages/basic09/tests/` — a single source of truth usable by any BASIC09 interpreter implementation.
 
 ## License
 
