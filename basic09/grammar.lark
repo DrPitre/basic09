@@ -36,6 +36,9 @@ statement: dim_stmt
          | open_stmt
          | close_stmt
          | get_file_stmt
+         | shell_stmt
+         | chd_stmt
+         | chx_stmt
          | label_stmt
          | expr_stmt
 
@@ -149,6 +152,15 @@ base_stmt: "BASE" INT_LIT
 open_stmt:     "OPEN"  "#" expr "," expr (":" IDENT)?
 close_stmt:    "CLOSE" "#" expr
 get_file_stmt: "GET"   "#" expr "," var_list
+
+// Shell command
+shell_stmt: "SHELL" expr
+
+// Change directory
+chd_stmt: "CHD" expr
+
+// Change execution directory (OS-9 only — no-op on host OS)
+chx_stmt: "CHX" expr
 
 // Label
 label_stmt: IDENT ":"

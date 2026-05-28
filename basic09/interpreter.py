@@ -2,6 +2,7 @@ from __future__ import annotations
 import math
 import random as _random
 import re
+import subprocess
 import sys
 from datetime import datetime
 from typing import Any, Optional
@@ -515,6 +516,9 @@ class Basic09Interpreter:
             "open_stmt":        lambda s, e: None,
             "close_stmt":       lambda s, e: None,
             "get_file_stmt":    lambda s, e: None,
+            "shell_stmt":       self._exec_shell,
+            "chd_stmt":         self._exec_chd,
+            "chx_stmt":         lambda s, e: None,
             "rem_stmt":         lambda s, e: None,
             "label_stmt":       lambda s, e: None,
             "endif_stmt":       lambda s, e: None,   # no-op: orphaned ENDIF from inline-IF patterns
@@ -1096,6 +1100,15 @@ class Basic09Interpreter:
 
     def _exec_restore(self, stmt: Tree, env: Environment) -> None:
         self._data_ptr = 0
+
+    def _exec_shell(self, stmt: Tree, env: Environment) -> None:
+        cmd = self._eval_expr(stmt.children[0], env).as_str()
+        subprocess.run(cmd, shell=True)
+
+    def _exec_chd(self, stmt: Tree, env: Environment) -> None:
+        import os
+        path = self._eval_expr(stmt.children[0], env).as_str()
+        os.chdir(path)
 
     # ------------------------------------------------------------------ #
     # Expression evaluation                                                #
