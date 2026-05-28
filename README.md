@@ -1,8 +1,8 @@
 # Basic09 Interpreter in Python
 
-A Python interpreter for **BASIC09** — the structured BASIC dialect developed by Microware for the TRS-80 Color Computer running OS-9.
+A Python interpreter for **Basic09** — the structured BASIC dialect developed by Microware for the 6809.
 
-BASIC09 differs from most BASICs of its era by supporting structured control flow, typed variables, record types, and proper procedure abstraction with pass-by-reference parameters.
+Basic09 differs from most BASICs of its era by supporting structured control flow, typed variables, record types, and proper procedure abstraction with pass-by-reference parameters.
 
 ## Features
 
@@ -46,7 +46,7 @@ python main.py examples/hello.b09
 python main.py
 ```
 
-Type BASIC09 statements, then `RUN` to execute. `NEW` clears the buffer, `LIST` shows it.
+Type Basic09 statements, then `RUN` to execute. `NEW` clears the buffer, `LIST` shows it.
 
 ### Python API
 
@@ -66,7 +66,7 @@ interp.run_procedure("greet", [B09Value.string("World")])
 
 `run_procedure` accepts a list of `B09Value` arguments matching the procedure's `PARAM` declarations. Use the appropriate constructor for each type:
 
-| BASIC09 type | Python constructor |
+| Basic09 type | Python constructor |
 |---|---|
 | `INTEGER` | `B09Value.integer(42)` |
 | `REAL` | `B09Value.real(3.14)` |
