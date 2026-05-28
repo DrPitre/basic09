@@ -119,6 +119,62 @@ def _rnd(a: B09Value) -> B09Value:
     return B09Value.real(_rnd_last)
 
 
+class _FileHandle:
+    _MODE_MAP = {
+        "READ": "r", "WRITE": "w", "UPDATE": "r+",
+        "APPEND": "a", "DIRECTORY": "r", "EXECUTION": "r",
+    }
+
+    def __init__(self, f):
+        self.f = f
+        self._pending: list[str] = []
+        self._eof = False
+
+    @classmethod
+    def open(cls, path: str, mode_str: str) -> "_FileHandle":
+        py_mode = cls._MODE_MAP.get(mode_str.upper(), "r")
+        return cls(open(path, py_mode, newline=""))
+
+    @classmethod
+    def create(cls, path: str) -> "_FileHandle":
+        return cls(open(path, "w", newline=""))
+
+    def is_eof(self) -> bool:
+        if self._eof:
+            return True
+        if self._pending:
+            return False
+        pos = self.f.tell()
+        ch = self.f.read(1)
+        if not ch:
+            self._eof = True
+            return True
+        self.f.seek(pos)
+        return False
+
+    def read_field(self) -> str:
+        while not self._pending:
+            if self._eof:
+                return ""
+            line = self.f.readline()
+            if not line:
+                self._eof = True
+                return ""
+            self._pending = [v.strip() for v in line.rstrip("\r\n").split(",")]
+        return self._pending.pop(0)
+
+    def write_fields(self, values: list[str]) -> None:
+        self.f.write(",".join(values) + "\n")
+
+    def seek(self, pos: int) -> None:
+        self._pending.clear()
+        self._eof = False
+        self.f.seek(pos)
+
+    def close(self) -> None:
+        self.f.close()
+
+
 _BUILTINS: dict[str, Any] = {
     "ABS":    lambda a: B09Value.real(abs(a.as_float())) if a.tag == TypeTag.REAL else B09Value.integer(abs(a.as_int())),
     "INT":    lambda a: B09Value.integer(int(a.as_float())),
@@ -257,6 +313,7 @@ class Basic09Interpreter:
         self._type_defs: dict[str, list[tuple[str, TypeTag]]] = {}
         self._data: list[B09Value] = []
         self._data_ptr: int = 0
+        self._files: dict[int, _FileHandle] = {}
         self._env = Environment()
         self._global_stmts: list = []
         self._global_labels: dict[str, int] = {}
@@ -513,9 +570,15 @@ class Basic09Interpreter:
             "deg_stmt":         lambda s, e: None,
             "rad_stmt":         lambda s, e: None,
             "base_stmt":        lambda s, e: None,
-            "open_stmt":        lambda s, e: None,
-            "close_stmt":       lambda s, e: None,
-            "get_file_stmt":    lambda s, e: None,
+            "open_stmt":        self._exec_open,
+            "close_stmt":       self._exec_close,
+            "create_stmt":      self._exec_create,
+            "delete_stmt":      self._exec_delete,
+            "get_file_stmt":    self._exec_read_file,
+            "put_file_stmt":    lambda s, e: None,
+            "read_file_stmt":   self._exec_read_file,
+            "write_file_stmt":  self._exec_write_file,
+            "seek_stmt":        self._exec_seek,
             "shell_stmt":       self._exec_shell,
             "chd_stmt":         self._exec_chd,
             "chx_stmt":         lambda s, e: None,
@@ -1101,6 +1164,63 @@ class Basic09Interpreter:
     def _exec_restore(self, stmt: Tree, env: Environment) -> None:
         self._data_ptr = 0
 
+    def _exec_open(self, stmt: Tree, env: Environment) -> None:
+        path_num = self._eval_expr(stmt.children[0], env).as_int()
+        filename = self._eval_expr(stmt.children[1], env).as_str()
+        mode_str = "READ"
+        if len(stmt.children) > 2:
+            mode_node = stmt.children[2]
+            mode_str = str(mode_node.children[0]).upper()
+        if path_num in self._files:
+            self._files[path_num].close()
+        self._files[path_num] = _FileHandle.open(filename, mode_str)
+
+    def _exec_close(self, stmt: Tree, env: Environment) -> None:
+        path_num = self._eval_expr(stmt.children[0], env).as_int()
+        handle = self._files.pop(path_num, None)
+        if handle:
+            handle.close()
+
+    def _exec_create(self, stmt: Tree, env: Environment) -> None:
+        filename = self._eval_expr(stmt.children[0], env).as_str()
+        _FileHandle.create(filename).close()
+
+    def _exec_delete(self, stmt: Tree, env: Environment) -> None:
+        import os
+        filename = self._eval_expr(stmt.children[0], env).as_str()
+        try:
+            os.remove(filename)
+        except FileNotFoundError:
+            pass
+
+    def _exec_read_file(self, stmt: Tree, env: Environment) -> None:
+        path_num = self._eval_expr(stmt.children[0], env).as_int()
+        var_list = stmt.children[1]
+        handle = self._files.get(path_num)
+        if handle is None:
+            return
+        for var_node in var_list.children:
+            if not isinstance(var_node, Tree):
+                continue
+            raw = handle.read_field()
+            self._assign_var(var_node, B09Value.string(raw), env)
+
+    def _exec_write_file(self, stmt: Tree, env: Environment) -> None:
+        path_num = self._eval_expr(stmt.children[0], env).as_int()
+        handle = self._files.get(path_num)
+        if handle is None:
+            return
+        expr_list = stmt.children[1]
+        values = [str(self._eval_expr(e, env)) for e in self._exprs_from_list(expr_list)]
+        handle.write_fields(values)
+
+    def _exec_seek(self, stmt: Tree, env: Environment) -> None:
+        path_num = self._eval_expr(stmt.children[0], env).as_int()
+        pos = self._eval_expr(stmt.children[1], env).as_int()
+        handle = self._files.get(path_num)
+        if handle:
+            handle.seek(pos)
+
     def _exec_shell(self, stmt: Tree, env: Environment) -> None:
         cmd = self._eval_expr(stmt.children[0], env).as_str()
         subprocess.run(cmd, shell=True)
@@ -1149,10 +1269,22 @@ class Basic09Interpreter:
             name2, root_idx_node, chain = self._parse_var_chain(node)
 
             # Built-in called as array: SIN(x), INT(x), etc.
-            if not chain and root_idx_node is not None and name2 in _BUILTINS:
+            if not chain and root_idx_node is not None:
                 args = [self._eval_expr(e, env)
                         for e in self._exprs_from_index(root_idx_node)]
-                return _BUILTINS[name2](*args)
+                if name2 in _BUILTINS:
+                    return _BUILTINS[name2](*args)
+                if name2 == "EOF":
+                    n = args[0].as_int() if args else 0
+                    h = self._files.get(n)
+                    return B09Value.boolean(h is None or h.is_eof())
+                if name2 in ("LOF", "SIZE"):
+                    n = args[0].as_int() if args else 0
+                    h = self._files.get(n)
+                    if h:
+                        pos = h.f.tell(); h.f.seek(0, 2); size = h.f.tell(); h.f.seek(pos)
+                        return B09Value.integer(size)
+                    return B09Value.integer(0)
 
             # Get root value
             if root_idx_node is not None:
@@ -1180,10 +1312,24 @@ class Basic09Interpreter:
             if len(node.children) > 1 and isinstance(node.children[1], Tree):
                 args = self._exprs_from_list(node.children[1])
                 args = [self._eval_expr(e, env) for e in args]
+            if fname == "EOF":
+                n = args[0].as_int() if args else 0
+                h = self._files.get(n)
+                return B09Value.boolean(h is None or h.is_eof())
+            if fname in ("LOF", "SIZE"):
+                n = args[0].as_int() if args else 0
+                h = self._files.get(n)
+                if h:
+                    pos = h.f.tell(); h.f.seek(0, 2); size = h.f.tell(); h.f.seek(pos)
+                    return B09Value.integer(size)
+                return B09Value.integer(0)
             fn = _BUILTINS.get(fname)
             if fn:
                 return fn(*args)
             raise Basic09Error(f"Unknown function '{fname}'")
+
+        if name == "file_ref":
+            return self._eval_expr(node.children[0], env)
 
         # Binary ops
         ops = {

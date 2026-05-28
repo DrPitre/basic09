@@ -35,7 +35,13 @@ statement: dim_stmt
          | base_stmt
          | open_stmt
          | close_stmt
+         | create_stmt
+         | delete_stmt
          | get_file_stmt
+         | put_file_stmt
+         | read_file_stmt
+         | write_file_stmt
+         | seek_stmt
          | shell_stmt
          | chd_stmt
          | chx_stmt
@@ -149,9 +155,16 @@ rad_stmt: "RAD"
 base_stmt: "BASE" INT_LIT
 
 // File I/O
-open_stmt:     "OPEN"  "#" expr "," expr (":" IDENT)?
-close_stmt:    "CLOSE" "#" expr
-get_file_stmt: "GET"   "#" expr "," var_list
+!open_mode: "READ" | "WRITE" | "UPDATE" | "APPEND" | "DIRECTORY" | "EXECUTION" | IDENT
+open_stmt:       "OPEN"   "#" expr "," expr (":" open_mode)?
+close_stmt:      "CLOSE"  "#" expr
+create_stmt:     "CREATE" expr
+delete_stmt:     "DELETE" expr
+get_file_stmt:   "GET"    "#" expr "," var_list
+put_file_stmt:   "PUT"    "#" expr "," expr_list
+read_file_stmt:  "READ"   "#" expr "," var_list
+write_file_stmt: "WRITE"  "#" expr "," expr_list
+seek_stmt:       "SEEK"   "#" expr "," expr
 
 // Shell command
 shell_stmt: "SHELL" expr
@@ -211,7 +224,10 @@ array_index: "(" expr_list ")"
 ?primary: literal
         | var
         | func_call
+        | file_ref
         | "(" expr ")"
+
+file_ref: "#" expr
 
 func_call: IDENT "(" expr_list? ")"
 

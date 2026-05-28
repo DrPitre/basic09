@@ -119,6 +119,13 @@ def _cast(value: B09Value, target: TypeTag, name: str) -> B09Value:
         return B09Value.integer(int(value.value))
     if target == TypeTag.BYTE and value.tag == TypeTag.INTEGER:
         return B09Value.byte(value.value)
+    if target == TypeTag.STRING and value.tag != TypeTag.STRING:
+        return B09Value.string(str(value))
+    if target in (TypeTag.INTEGER, TypeTag.REAL, TypeTag.BYTE) and value.tag == TypeTag.STRING:
+        try:
+            return B09Value.integer(int(value.value)) if target in (TypeTag.INTEGER, TypeTag.BYTE) else B09Value.real(float(value.value))
+        except (ValueError, TypeError):
+            pass
     raise TypeMismatch(
         f"Cannot assign {value.tag.name} to '{name}' (declared {target.name})"
     )
